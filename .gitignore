@@ -1,0 +1,34 @@
+# Archivos y directorios creados por pub
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# Directorio creado por dartdoc
+doc/api/
+
+# Archivos de entorno
+.env*
+
+# Evitar subir archivos JS generados
+*.dart.js
+*.info.json
+*.js
+*.js_
+*.js.deps
+*.js.map
+
+# Configuración específica de Flutter
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Configuración de IDEs (evita conflictos entre colaboradores)
+.idea/
+.vscode/
+*.iml
+
+# Cache de paquetes de pub
+.pub-cache/
+
+# Otros
+.melos_tool/
