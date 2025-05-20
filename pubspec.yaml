@@ -41,6 +41,10 @@ dependencies:
   shared_preferences: ^2.5.3
   google_fonts: ^6.2.1  # Actualiza a esta versión
   shimmer: ^2.0.0
+  uuid: ^4.2.2
+  intl: ^0.18.1
+  lottie: ^2.7.0
+  fl_chart: ^0.64.0
 
 dev_dependencies:
   flutter_test:

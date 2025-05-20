@@ -17,6 +17,7 @@ class AppColors {
   static const Color success = Color(0xFF6DC9A1);       // Verde menta
   static const Color warning = Color(0xFFF6C667);       // Amarillo miel
   static const Color error = Color(0xFFF08A84);         // Coral suave
+  static const Color info = Color(0xFF64B5F6);          // Azul información
 
   // Gradientes
   static const LinearGradient gradientPrimary = LinearGradient(
@@ -36,4 +37,14 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  // Alias para compatibilidad con código existente
+  static const Color primaryColor = primary;
+  static const Color secondaryColor = secondary;
+  static const Color accentColor = accent;
+  static const Color backgroundColor = background;
+  static const Color textDark = text;
+  static const Color textMedium = textSecondary;
+  static const Color borderColor = Color(0xFFE0E0E0);
+  static const Color shadowColor = Color(0xFF000000);
 }
