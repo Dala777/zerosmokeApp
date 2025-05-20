@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../providers/cigarette_log_provider.dart';
 import '../models/cigarette_log.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:uuid/uuid.dart';
 
 class CigaretteLogScreen extends StatefulWidget {
   static const routeName = '/cigarette-log';
+
+  const CigaretteLogScreen({Key? key}) : super(key: key);
 
   @override
   _CigaretteLogScreenState createState() => _CigaretteLogScreenState();
@@ -22,6 +22,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadLogs();
   }
   
   @override
@@ -30,14 +31,19 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
     super.dispose();
   }
 
+  Future<void> _loadLogs() async {
+    final provider = Provider.of<CigaretteLogProvider>(context, listen: false);
+    await provider.fetchLogs('user123'); // En una app real, esto vendría del usuario autenticado
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Registro de Cigarrillos'),
+        title: const Text('Registro de Cigarrillos'),
         bottom: TabBar(
           controller: _tabController,
-          tabs: [
+          tabs: const [
             Tab(text: 'Registro'),
             Tab(text: 'Estadísticas'),
             Tab(text: 'Patrones'),
@@ -57,7 +63,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
           _showAddLogDialog(context);
         },
         backgroundColor: AppColors.primary,
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -66,7 +72,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
     return Consumer<CigaretteLogProvider>(
       builder: (ctx, provider, child) {
         if (provider.isLoading) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         }
         
         if (provider.logs.isEmpty) {
@@ -79,7 +85,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   size: 80,
                   color: Colors.grey[400],
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
                   'No hay registros',
                   style: TextStyle(
@@ -88,7 +94,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                     color: Colors.grey[700],
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   'Registra tus antojos y cigarrillos para ver patrones',
                   textAlign: TextAlign.center,
@@ -97,16 +103,16 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                     color: Colors.grey[600],
                   ),
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () {
                     _showAddLogDialog(context);
                   },
-                  icon: Icon(Icons.add),
-                  label: Text('Añadir registro'),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Añadir registro'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
                 ),
               ],
@@ -120,7 +126,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
           ..sort((a, b) => b.compareTo(a)); // Ordenar por fecha descendente
         
         return ListView.builder(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           itemCount: sortedDates.length,
           itemBuilder: (ctx, index) {
             final date = sortedDates[index];
@@ -133,7 +139,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Text(
                     _formatDate(date),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppColors.text,
@@ -142,7 +148,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                 ),
                 ...logs.map((log) => _buildLogItem(log)).toList(),
                 if (index < sortedDates.length - 1)
-                  Divider(height: 32),
+                  const Divider(height: 32),
               ],
             );
           },
@@ -159,8 +165,8 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
       background: Container(
         color: Colors.red,
         alignment: Alignment.centerRight,
-        padding: EdgeInsets.only(right: 16),
-        child: Icon(
+        padding: const EdgeInsets.only(right: 16),
+        child: const Icon(
           Icons.delete,
           color: Colors.white,
         ),
@@ -170,14 +176,14 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
         Provider.of<CigaretteLogProvider>(context, listen: false)
             .deleteLog(log.id);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Registro eliminado'),
             duration: Duration(seconds: 2),
           ),
         );
       },
       child: Card(
-        margin: EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -187,7 +193,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
           },
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -206,7 +212,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                     size: 24,
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,7 +222,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                         children: [
                           Text(
                             log.avoided ? 'Antojo evitado' : 'Cigarrillo fumado',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColors.text,
@@ -224,24 +230,24 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                           ),
                           Text(
                             timeFormat.format(log.timestamp),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       if (log.trigger != null)
                         _buildInfoRow(Icons.flash_on, log.trigger!),
                       if (log.location != null)
                         _buildInfoRow(Icons.location_on, log.location!),
                       if (log.mood != null)
                         _buildInfoRow(Icons.mood, log.mood!),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
-                          Text(
+                          const Text(
                             'Intensidad: ',
                             style: TextStyle(
                               fontSize: 14,
@@ -260,10 +266,10 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                         ],
                       ),
                       if (log.notes != null && log.notes!.isNotEmpty) ...[
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           log.notes!,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
                             fontStyle: FontStyle.italic,
@@ -293,10 +299,10 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
             size: 16,
             color: AppColors.textSecondary,
           ),
-          SizedBox(width: 4),
+          const SizedBox(width: 4),
           Text(
             text,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
             ),
@@ -310,11 +316,11 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
     return Consumer<CigaretteLogProvider>(
       builder: (ctx, provider, child) {
         if (provider.isLoading) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         }
         
         if (provider.logs.isEmpty) {
-          return Center(
+          return const Center(
             child: Text('No hay datos suficientes para mostrar estadísticas'),
           );
         }
@@ -325,11 +331,14 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
         final avoidedPercentage = totalLogs > 0 ? (avoidedCount / totalLogs * 100).toStringAsFixed(1) : '0';
         
         return SingleChildScrollView(
-          padding: EdgeInsets.all(16),
+          padding: const Edge  : '0';
+        
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Resumen',
                 style: TextStyle(
                   fontSize: 20,
@@ -337,7 +346,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   color: AppColors.text,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -348,7 +357,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                       color: AppColors.info,
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
                       title: 'Antojos evitados',
@@ -359,7 +368,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   ),
                 ],
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -370,7 +379,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                       color: AppColors.error,
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
                       title: 'Tasa de éxito',
@@ -381,8 +390,8 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   ),
                 ],
               ),
-              SizedBox(height: 24),
-              Text(
+              const SizedBox(height: 24),
+              const Text(
                 'Distribución',
                 style: TextStyle(
                   fontSize: 20,
@@ -390,10 +399,10 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   color: AppColors.text,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Container(
                 height: 200,
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -401,7 +410,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
                       blurRadius: 10,
-                      offset: Offset(0, 4),
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -415,7 +424,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                         title: 'Fumados',
                         color: AppColors.error,
                         radius: 60,
-                        titleStyle: TextStyle(
+                        titleStyle: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -426,7 +435,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                         title: 'Evitados',
                         color: AppColors.success,
                         radius: 60,
-                        titleStyle: TextStyle(
+                        titleStyle: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -447,11 +456,11 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
     return Consumer<CigaretteLogProvider>(
       builder: (ctx, provider, child) {
         if (provider.isLoading) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         }
         
         if (provider.logs.isEmpty) {
-          return Center(
+          return const Center(
             child: Text('No hay datos suficientes para mostrar patrones'),
           );
         }
@@ -461,11 +470,11 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
         final logsByTrigger = provider.logsByTrigger;
         
         return SingleChildScrollView(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Patrones identificados',
                 style: TextStyle(
                   fontSize: 20,
@@ -473,15 +482,15 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   color: AppColors.text,
                 ),
               ),
-              SizedBox(height: 8),
-              Text(
+              const SizedBox(height: 8),
+              const Text(
                 'Analiza tus hábitos para identificar desencadenantes',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               
               // Por ubicación
               _buildPatternSection(
@@ -491,7 +500,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                 color: Colors.blue,
               ),
               
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               
               // Por estado de ánimo
               _buildPatternSection(
@@ -501,7 +510,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                 color: Colors.orange,
               ),
               
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               
               // Por desencadenante
               _buildPatternSection(
@@ -511,10 +520,10 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                 color: Colors.purple,
               ),
               
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
               
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.info.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -524,12 +533,12 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   children: [
                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.lightbulb,
                           color: AppColors.info,
                         ),
-                        SizedBox(width: 8),
-                        Text(
+                        const SizedBox(width: 8),
+                        const Text(
                           'Consejo',
                           style: TextStyle(
                             fontSize: 16,
@@ -539,8 +548,8 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       'Identifica tus principales desencadenantes y prepara estrategias específicas para cada uno. Por ejemplo, si sueles fumar después de comer, planifica una actividad alternativa para ese momento.',
                       style: TextStyle(
                         fontSize: 14,
@@ -581,10 +590,10 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
               color: color,
               size: 20,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: AppColors.text,
@@ -592,7 +601,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
             ),
           ],
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         ...sortedEntries.take(5).map((entry) {
           final percentage = (entry.value / data.values.reduce((a, b) => a + b) * 100).toStringAsFixed(1);
           
@@ -606,14 +615,14 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   children: [
                     Text(
                       entry.key,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.text,
                       ),
                     ),
                     Text(
                       '${entry.value} (${percentage}%)',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: AppColors.text,
@@ -621,7 +630,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                     ),
                   ],
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 LinearProgressIndicator(
                   value: entry.value / sortedEntries.first.value,
                   backgroundColor: Colors.grey.shade200,
@@ -644,7 +653,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
     required Color color,
   }) {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -652,7 +661,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -662,7 +671,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
                   shape: BoxShape.circle,
@@ -673,20 +682,20 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
                   size: 16,
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: AppColors.text,
@@ -723,276 +732,280 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
     
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Registrar cigarrillo/antojo'),
-        content: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tipo de registro
-                Text(
-                  '¿Qué quieres registrar?',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Row(
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Registrar cigarrillo/antojo'),
+            content: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _avoided = false;
-                          });
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: !_avoided ? AppColors.error.withOpacity(0.1) : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: !_avoided ? AppColors.error : Colors.grey.shade300,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.smoking_rooms,
-                                color: !_avoided ? AppColors.error : Colors.grey,
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Cigarrillo fumado',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: !_avoided ? AppColors.error : Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    // Tipo de registro
+                    const Text(
+                      '¿Qué quieres registrar?',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.text,
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _avoided = true;
-                          });
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: _avoided ? AppColors.success.withOpacity(0.1) : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _avoided ? AppColors.success : Colors.grey.shade300,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: _avoided ? AppColors.success : Colors.grey,
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Antojo evitado',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _avoided ? AppColors.success : Colors.grey,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _avoided = false;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: !_avoided ? AppColors.error.withOpacity(0.1) : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: !_avoided ? AppColors.error : Colors.grey.shade300,
                                 ),
                               ),
-                            ],
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.smoking_rooms,
+                                    color: !_avoided ? AppColors.error : Colors.grey,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Cigarrillo fumado',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: !_avoided ? AppColors.error : Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _avoided = true;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: _avoided ? AppColors.success.withOpacity(0.1) : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _avoided ? AppColors.success : Colors.grey.shade300,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: _avoided ? AppColors.success : Colors.grey,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Antojo evitado',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _avoided ? AppColors.success : Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Ubicación
+                    const Text(
+                      'Ubicación',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.text,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: locations.map((location) {
+                        return ChoiceChip(
+                          label: Text(location),
+                          selected: _location == location,
+                          onSelected: (selected) {
+                            setState(() {
+                              _location = selected ? location : null;
+                            });
+                          },
+                          backgroundColor: Colors.grey.shade100,
+                          selectedColor: AppColors.primary.withOpacity(0.2),
+                          labelStyle: TextStyle(
+                            color: _location == location ? AppColors.primary : AppColors.textSecondary,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Estado de ánimo
+                    const Text(
+                      'Estado de ánimo',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: moods.map((mood) {
+                        return ChoiceChip(
+                          label: Text(mood),
+                          selected: _mood == mood,
+                          onSelected: (selected) {
+                            setState(() {
+                              _mood = selected ? mood : null;
+                            });
+                          },
+                          backgroundColor: Colors.grey.shade100,
+                          selectedColor: AppColors.primary.withOpacity(0.2),
+                          labelStyle: TextStyle(
+                            color: _mood == mood ? AppColors.primary : AppColors.textSecondary,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Desencadenante
+                    const Text(
+                      'Desencadenante',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: triggers.map((trigger) {
+                        return ChoiceChip(
+                          label: Text(trigger),
+                          selected: _trigger == trigger,
+                          onSelected: (selected) {
+                            setState(() {
+                              _trigger = selected ? trigger : null;
+                            });
+                          },
+                          backgroundColor: Colors.grey.shade100,
+                          selectedColor: AppColors.primary.withOpacity(0.2),
+                          labelStyle: TextStyle(
+                            color: _trigger == trigger ? AppColors.primary : AppColors.textSecondary,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Intensidad
+                    const Text(
+                      'Intensidad del antojo (1-5)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Slider(
+                      value: _intensity.toDouble(),
+                      min: 1,
+                      max: 5,
+                      divisions: 4,
+                      label: _intensity.toString(),
+                      onChanged: (value) {
+                        setState(() {
+                          _intensity = value.round();
+                        });
+                      },
+                      activeColor: AppColors.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Notas
+                    const Text(
+                      'Notas (opcional)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        hintText: 'Añade detalles adicionales...',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                      onChanged: (value) {
+                        _notes = value;
+                      },
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
-                
-                // Ubicación
-                Text(
-                  'Ubicación',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: locations.map((location) {
-                    return ChoiceChip(
-                      label: Text(location),
-                      selected: _location == location,
-                      onSelected: (selected) {
-                        setState(() {
-                          _location = selected ? location : null;
-                        });
-                      },
-                      backgroundColor: Colors.grey.shade100,
-                      selectedColor: AppColors.primary.withOpacity(0.2),
-                      labelStyle: TextStyle(
-                        color: _location == location ? AppColors.primary : AppColors.textSecondary,
-                      ),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 16),
-                
-                // Estado de ánimo
-                Text(
-                  'Estado de ánimo',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: moods.map((mood) {
-                    return ChoiceChip(
-                      label: Text(mood),
-                      selected: _mood == mood,
-                      onSelected: (selected) {
-                        setState(() {
-                          _mood = selected ? mood : null;
-                        });
-                      },
-                      backgroundColor: Colors.grey.shade100,
-                      selectedColor: AppColors.primary.withOpacity(0.2),
-                      labelStyle: TextStyle(
-                        color: _mood == mood ? AppColors.primary : AppColors.textSecondary,
-                      ),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 16),
-                
-                // Desencadenante
-                Text(
-                  'Desencadenante',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: triggers.map((trigger) {
-                    return ChoiceChip(
-                      label: Text(trigger),
-                      selected: _trigger == trigger,
-                      onSelected: (selected) {
-                        setState(() {
-                          _trigger = selected ? trigger : null;
-                        });
-                      },
-                      backgroundColor: Colors.grey.shade100,
-                      selectedColor: AppColors.primary.withOpacity(0.2),
-                      labelStyle: TextStyle(
-                        color: _trigger == trigger ? AppColors.primary : AppColors.textSecondary,
-                      ),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 16),
-                
-                // Intensidad
-                Text(
-                  'Intensidad del antojo (1-5)',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Slider(
-                  value: _intensity.toDouble(),
-                  min: 1,
-                  max: 5,
-                  divisions: 4,
-                  label: _intensity.toString(),
-                  onChanged: (value) {
-                    setState(() {
-                      _intensity = value.round();
-                    });
-                  },
-                  activeColor: AppColors.primary,
-                ),
-                SizedBox(height: 16),
-                
-                // Notas
-                Text(
-                  'Notas (opcional)',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
-                  ),
-                ),
-                SizedBox(height: 8),
-                TextFormField(
-                  decoration: InputDecoration(
-                    hintText: 'Añade detalles adicionales...',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                  onChanged: (value) {
-                    _notes = value;
-                  },
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-            },
-            child: Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                final provider = Provider.of<CigaretteLogProvider>(context, listen: false);
-                provider.createLog(
-                  userId: 'user123', // En una app real, esto vendría del usuario autenticado
-                  location: _location,
-                  mood: _mood,
-                  trigger: _trigger,
-                  intensity: _intensity,
-                  notes: _notes,
-                  avoided: _avoided,
-                );
-                Navigator.of(ctx).pop();
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Registro añadido correctamente'),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
-              }
-            },
-            child: Text('Guardar'),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    final provider = Provider.of<CigaretteLogProvider>(context, listen: false);
+                    provider.createLog(
+                      userId: 'user123', // En una app real, esto vendría del usuario autenticado
+                      location: _location,
+                      mood: _mood,
+                      trigger: _trigger,
+                      intensity: _intensity,
+                      notes: _notes,
+                      avoided: _avoided,
+                    );
+                    Navigator.of(ctx).pop();
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Registro añadido correctamente'),
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
@@ -1030,7 +1043,7 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
             onPressed: () {
               Navigator.of(ctx).pop();
             },
-            child: Text('Cerrar'),
+            child: const Text('Cerrar'),
           ),
           TextButton(
             onPressed: () {
@@ -1038,13 +1051,13 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
               Provider.of<CigaretteLogProvider>(context, listen: false)
                   .deleteLog(log.id);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+                const SnackBar(
                   content: Text('Registro eliminado'),
                   backgroundColor: Colors.red,
                 ),
               );
             },
-            child: Text(
+            child: const Text(
               'Eliminar',
               style: TextStyle(color: Colors.red),
             ),
@@ -1062,16 +1075,16 @@ class _CigaretteLogScreenState extends State<CigaretteLogScreen> with SingleTick
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppColors.textSecondary,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               color: AppColors.text,
             ),

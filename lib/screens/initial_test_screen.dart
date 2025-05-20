@@ -135,7 +135,7 @@ class _InitialTestScreenState extends State<InitialTestScreen> {
           "Test Inicial",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.primary,
         elevation: 0,
       ),
       body: SafeArea(

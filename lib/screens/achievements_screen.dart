@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/achievement_provider.dart';
 import '../providers/auth_provider.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_colors.dart';
+import '../models/achievement.dart';
 import '../widgets/achievement_widget.dart';
 import '../widgets/visual_widgets.dart';
 
@@ -23,7 +24,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> with SingleTick
     
     // Fetch achievements when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id ?? 'test-user';
+      final userId = Provider.of<AuthProvider>(context, listen: false).user?.id ?? 'test-user';
       Provider.of<AchievementProvider>(context, listen: false).fetchAchievements(userId);
     });
   }
@@ -68,8 +69,8 @@ class _AchievementsScreenState extends State<AchievementsScreen> with SingleTick
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.accentColor,
+                            AppColors.primary,
+                            AppColors.accent,
                           ],
                         ),
                       ),
@@ -140,33 +141,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> with SingleTick
 
   Widget _buildLoadingState() {
     return Center(
-      child: ShimmerLoadingIndicator(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              width: 200,
-              height: 24,
-              color: Colors.white,
-            ),
-            SizedBox(height: 8),
-            Container(
-              width: 150,
-              height: 16,
-              color: Colors.white,
-            ),
-          ],
-        ),
-      ),
+      child: CircularProgressIndicator(),
     );
   }
 
@@ -175,7 +150,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> with SingleTick
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48, color: AppTheme.errorColor),
+          Icon(Icons.error_outline, size: 48, color: Colors.red),
           SizedBox(height: 16),
           Text(
             'Error al cargar los logros',
@@ -186,7 +161,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> with SingleTick
           SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id ?? 'test-user';
+              final userId = Provider.of<AuthProvider>(context, listen: false).user?.id ?? 'test-user';
               provider.fetchAchievements(userId);
             },
             child: Text('Reintentar'),
@@ -259,7 +234,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> with SingleTick
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+                  color: AppColors.primary,
                 ),
               ),
             ),
