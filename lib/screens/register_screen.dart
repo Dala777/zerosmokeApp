@@ -167,10 +167,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                         child: Column(
                           children: [
                             Container(
-                              width: 80,
-                              height: 80,
+                              width: 120,
+                              height: 120,
                               decoration: BoxDecoration(
-                                color: AppColors.cardBackground,
+                                color: Colors.white,
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
@@ -180,11 +180,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                   ),
                                 ],
                               ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.health_and_safety,
-                                  size: 40,
-                                  color: AppColors.primary,
+                              child: ClipOval(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(15.0),
+                                  child: Image.asset(
+                                    'assets/images/logoZS.png',
+                                    fit: BoxFit.contain,
+                                  ),
                                 ),
                               ),
                             ),

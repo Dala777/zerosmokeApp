@@ -13,8 +13,8 @@ class ApiService {
   //static const String baseUrl = 'http://10.0.2.2:5000/api'; // Emulador Android -> PC localhost
   // static const String baseUrl = 'http://localhost:5000/api'; // iOS Simulator -> Mac localhost
   //static const String baseUrl = 'http://192.168.1.85:5000/api'; // Reemplaza X con tu IP local
-  //static const String baseUrl = 'http://10.7.3.238:5000/api';
-  static const String baseUrl = 'http://192.168.43.102:5000/api';
+  static const String baseUrl = 'http://10.7.2.6:5000/api';
+  //static const String baseUrl = 'http://192.168.43.102:5000/api';
 
 
   // Headers para las peticiones API
