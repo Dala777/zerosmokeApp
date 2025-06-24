@@ -2,7 +2,7 @@ class Activity {
   final String id;
   final String title;
   final String description;
-  final String type; // 'exercise', 'reflection', 'breathing', etc.
+  final String type;
   final int durationMinutes;
   final bool isCompleted;
 
@@ -17,7 +17,7 @@ class Activity {
 
   factory Activity.fromJson(Map<String, dynamic> json) {
     return Activity(
-      id: json['id'] ?? '',
+      id: json['_id'] ?? json['id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       type: json['type'] ?? '',
@@ -77,7 +77,7 @@ class DailyPlan {
 
   factory DailyPlan.fromJson(Map<String, dynamic> json) {
     return DailyPlan(
-      id: json['id'] ?? '',
+      id: json['_id'] ?? json['id'] ?? '',
       userId: json['userId'] ?? '',
       date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
       activities: json['activities'] != null
@@ -85,7 +85,7 @@ class DailyPlan {
               json['activities'].map((x) => Activity.fromJson(x)))
           : [],
       isCompleted: json['isCompleted'] ?? false,
-      message: json['message'] ?? '',
+      message: json['message'] ?? json['dailyMessage'] ?? '',
       dayNumber: json['dayNumber'] ?? 0,
     );
   }

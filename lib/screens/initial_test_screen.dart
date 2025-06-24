@@ -101,7 +101,7 @@ class _InitialTestScreenState extends State<InitialTestScreen> {
       ),
     );
     
-    // Guardar el test
+    // Guardar el test y asignar plan
     final progressProvider = Provider.of<ProgressProvider>(context, listen: false);
     final success = await progressProvider.saveInitialTest(test);
     
@@ -109,20 +109,38 @@ class _InitialTestScreenState extends State<InitialTestScreen> {
     if (mounted) Navigator.of(context).pop();
     
     if (success) {
-      // Navegar al dashboard
+      // Mostrar mensaje de éxito
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('¡Test completado! Tu plan personalizado ha sido creado.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        
+        // Navegar al dashboard
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardScreen()),
         );
       }
     } else {
       // Mostrar error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(progressProvider.errorMessage),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(progressProvider.errorMessage),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
     }
   }
 

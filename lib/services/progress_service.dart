@@ -9,7 +9,7 @@ import 'api_service.dart';
 
 class ProgressService {
   final ApiService apiService;
-  static const String baseUrl = ApiService.baseUrl; // Usar la misma URL base que ApiService
+  static const String baseUrl = ApiService.baseUrl;
 
   ProgressService(this.apiService);
 
@@ -38,6 +38,33 @@ class ProgressService {
 
       return {
         'success': response.statusCode == 201,
+        'message': responseData['message'] ?? 'Unknown error',
+        'data': responseData['data'],
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Asignar plan basado en el puntaje de Fagerström
+  Future<Map<String, dynamic>> assignPlan(int fagerstromScore) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/progress/assign-plan'),
+        headers: headers,
+        body: jsonEncode({
+          'fagerstromScore': fagerstromScore,
+        }),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      return {
+        'success': response.statusCode == 201 || response.statusCode == 200,
         'message': responseData['message'] ?? 'Unknown error',
         'data': responseData['data'],
       };
@@ -183,7 +210,8 @@ class ProgressService {
       String url = '$baseUrl/progress/daily-plan';
       
       if (date != null) {
-        url += '?date=${date.toIso8601String()}';
+        final dateStr = date.toIso8601String().split('T')[0];
+        url += '?date=$dateStr';
       }
       
       final response = await http.get(
@@ -213,6 +241,7 @@ class ProgressService {
       final response = await http.put(
         Uri.parse('$baseUrl/progress/daily-plan/$planId/activity/$activityId/complete'),
         headers: headers,
+        body: jsonEncode({}),
       );
 
       final responseData = jsonDecode(response.body);

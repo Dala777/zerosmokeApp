@@ -154,14 +154,14 @@ class _DistractionGameWidgetState extends State<DistractionGameWidget>
     
     // Conseguir el ancho disponible corregido
     final screenWidth = MediaQuery.of(context).size.width - 100;
-    final bubbleSize = 40.0 + _random.nextDouble() * 30.0; // Reducido el tamaño de las burbujas
+    final bubbleSize = 40.0 + _random.nextDouble() * 30.0;
     
     setState(() {
       _bubbles.add(
         BubbleData(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           x: _random.nextDouble() * (screenWidth - bubbleSize),
-          y: 250.0, // Ajustado para el nuevo tamaño del área de juego
+          y: 200.0, // Ajustado para el área de juego más pequeña
           size: bubbleSize,
           color: Color.fromRGBO(
             100 + _random.nextInt(155),
@@ -216,7 +216,7 @@ class _DistractionGameWidgetState extends State<DistractionGameWidget>
     }
     
     return Container(
-      padding: const EdgeInsets.all(16), // Reducido de 20 a 16
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
@@ -228,231 +228,255 @@ class _DistractionGameWidgetState extends State<DistractionGameWidget>
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.games,
-                color: Colors.purple.shade600,
-                size: 24,
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                "Distráete con un juego",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.text,
+      child: IntrinsicHeight( // Agregado para evitar overflow
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Importante: min en lugar de max
+          children: [
+            // Header del juego
+            Row(
+              children: [
+                Icon(
+                  Icons.games,
+                  color: Colors.purple.shade600,
+                  size: 24,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12), // Reducido de 16 a 12
-          const Text(
-            "Un juego rápido para distraer tu mente del antojo de fumar. ¡Explota las burbujas para ganar puntos!",
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 12), // Reducido de 20 a 12
-        
-          // Información del juego
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Puntaje
-              AnimatedBuilder(
-                animation: _scaleAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _isPlaying ? _scaleAnimation.value : 1.0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Reducido
-                      decoration: BoxDecoration(
-                        color: Colors.purple.shade100,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.purple.shade300,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.star,
-                            color: Colors.purple.shade700,
-                            size: 18, // Reducido de 20 a 18
-                          ),
-                          const SizedBox(width: 4), // Reducido de 8 a 4
-                          Text(
-                            "Puntos: $_score/$_targetScore",
-                            style: TextStyle(
-                              fontSize: 14, // Reducido de 16 a 14
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purple.shade800,
-                            ),
-                          ),
-                        ],
-                      ),
+                const SizedBox(width: 10),
+                const Expanded( // Agregado Expanded para evitar overflow
+                  child: Text(
+                    "Distráete con un juego",
+                    style: TextStyle(
+                      fontSize: 18, // Reducido de 20 a 18
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.text,
                     ),
-                  );
-                },
-              ),
-              
-              // Tiempo restante
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Reducido
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.blue.shade300,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.timer,
-                      color: Colors.blue.shade700,
-                      size: 18, // Reducido de 20 a 18
-                    ),
-                    const SizedBox(width: 4), // Reducido de 8 a 4
-                    Text(
-                      "Tiempo: $_timeRemaining s",
-                      style: TextStyle(
-                        fontSize: 14, // Reducido de 16 a 14
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12), // Reducido de 20 a 12
-        
-          // Área de juego - reducida aún más
-          Container(
-            width: double.infinity,
-            height: 250, // Reducido de 350 a 250
-            decoration: BoxDecoration(
-              color: Colors.indigo.shade50,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.indigo.shade100,
+              ],
+            ),
+            const SizedBox(height: 8), // Reducido
+            const Text(
+              "Un juego rápido para distraer tu mente del antojo de fumar. ¡Explota las burbujas para ganar puntos!",
+              style: TextStyle(
+                fontSize: 13, // Reducido de 14 a 13
+                color: AppColors.textSecondary,
               ),
             ),
-            child: _isPlaying
-                ? Stack(
-                    children: [
-                      // Burbujas
-                      ...List.generate(_bubbles.length, (index) {
-                        final bubble = _bubbles[index];
-                        return Positioned(
-                          left: bubble.x,
-                          top: bubble.y,
-                          child: GestureDetector(
-                            onTap: () => _popBubble(index),
-                            child: Container(
-                              width: bubble.size,
-                              height: bubble.size,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: bubble.color,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: bubble.color.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
+            const SizedBox(height: 12),
+          
+            // Información del juego
+            Row(
+              children: [
+                // Puntaje
+                Expanded( // Agregado Expanded
+                  child: AnimatedBuilder(
+                    animation: _scaleAnimation,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _isPlaying ? _scaleAnimation.value : 1.0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Más reducido
+                          decoration: BoxDecoration(
+                            color: Colors.purple.shade100,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.purple.shade300,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min, // Agregado
+                            children: [
+                              Icon(
+                                Icons.star,
+                                color: Colors.purple.shade700,
+                                size: 16, // Reducido
                               ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.bubble_chart,
-                                  color: Colors.white.withOpacity(0.7),
-                                  size: bubble.size * 0.5,
+                              const SizedBox(width: 4),
+                              Flexible( // Cambiado de Text a Flexible
+                                child: Text(
+                                  "Puntos: $_score/$_targetScore",
+                                  style: TextStyle(
+                                    fontSize: 12, // Reducido
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple.shade800,
+                                  ),
+                                  overflow: TextOverflow.ellipsis, // Agregado
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        );
-                      }),
-                    ],
-                  )
-                : Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.touch_app,
-                        size: 40, // Reducido de 48 a 40
-                        color: Colors.indigo.shade300,
-                      ),
-                      const SizedBox(height: 12), // Reducido de 16 a 12
-                      Text(
-                        "Toca las burbujas para explotarlas",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.indigo.shade400,
                         ),
-                      ),
-                      const SizedBox(height: 4), // Reducido de 8 a 4
-                      Text(
-                        "Objetivo: $_targetScore puntos",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.indigo.shade400,
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
-        ),
-        const SizedBox(height: 12), // Reducido de 20 a 12
-        
-        // Botón de inicio
-        if (!_isPlaying)
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _startGame,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple.shade500,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12), // Reducido de 16 a 12
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.play_arrow,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "Comenzar juego",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                
+                const SizedBox(width: 8), // Espaciado entre widgets
+                
+                // Tiempo restante
+                Expanded( // Agregado Expanded
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Más reducido
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.blue.shade300,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, // Agregado
+                      children: [
+                        Icon(
+                          Icons.timer,
+                          color: Colors.blue.shade700,
+                          size: 16, // Reducido
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible( // Cambiado de Text a Flexible
+                          child: Text(
+                            "Tiempo: $_timeRemaining s",
+                            style: TextStyle(
+                              fontSize: 12, // Reducido
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade800,
+                            ),
+                            overflow: TextOverflow.ellipsis, // Agregado
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-      ],
-    ),
-  );
-}
+            const SizedBox(height: 12),
+          
+            // Área de juego - más compacta
+            Container(
+              width: double.infinity,
+              height: 200, // Reducido aún más de 250 a 200
+              decoration: BoxDecoration(
+                color: Colors.indigo.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.indigo.shade100,
+                ),
+              ),
+              child: _isPlaying
+                  ? ClipRRect( // Agregado ClipRRect para evitar overflow
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        children: [
+                          // Burbujas
+                          ...List.generate(_bubbles.length, (index) {
+                            final bubble = _bubbles[index];
+                            return Positioned(
+                              left: bubble.x,
+                              top: bubble.y,
+                              child: GestureDetector(
+                                onTap: () => _popBubble(index),
+                                child: Container(
+                                  width: bubble.size,
+                                  height: bubble.size,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: bubble.color,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: bubble.color.withOpacity(0.3),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.bubble_chart,
+                                      color: Colors.white.withOpacity(0.7),
+                                      size: bubble.size * 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    )
+                  : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.touch_app,
+                          size: 32, // Reducido
+                          color: Colors.indigo.shade300,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Toca las burbujas para explotarlas",
+                          style: TextStyle(
+                            fontSize: 14, // Reducido
+                            color: Colors.indigo.shade400,
+                          ),
+                          textAlign: TextAlign.center, // Agregado
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Objetivo: $_targetScore puntos",
+                          style: TextStyle(
+                            fontSize: 12, // Reducido
+                            color: Colors.indigo.shade400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Botón de inicio
+            if (!_isPlaying)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _startGame,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple.shade500,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10), // Reducido
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min, // Agregado
+                    children: [
+                      const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                        size: 20, // Reducido
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        "Comenzar juego",
+                        style: TextStyle(
+                          fontSize: 14, // Reducido
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // Clase para almacenar datos de las burbujas

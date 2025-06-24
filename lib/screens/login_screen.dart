@@ -302,9 +302,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 16),
                       
-                      // Opciones adicionales
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // Opciones adicionales - ARREGLADO EL OVERFLOW
+                      Column(
                         children: [
                           Row(
                             children: [
@@ -334,16 +333,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               ),
                             ],
                           ),
-                          TextButton(
-                            onPressed: () {
-                              // Lógica para recuperar contraseña
-                            },
-                            child: Text(
-                              "¿Olvidaste tu contraseña?",
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                // Lógica para recuperar contraseña
+                              },
+                              child: Text(
+                                "¿Olvidaste tu contraseña?",
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -378,18 +381,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       
                       // Enlace de registro
                       Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
                           children: [
                             Text(
-                              "¿No tienes una cuenta?",
+                              "¿No tienes una cuenta? ",
                               style: TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 14,
                               ),
                             ),
-                            TextButton(
-                              onPressed: () {
+                            GestureDetector(
+                              onTap: () {
                                 Navigator.of(context).pushReplacement(
                                   PageRouteBuilder(
                                     pageBuilder: (context, animation, secondaryAnimation) => const RegisterScreen(),
