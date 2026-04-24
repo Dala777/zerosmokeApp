@@ -12,9 +12,9 @@ class ApiService {
   // Prueba con estas opciones:
   //static const String baseUrl = 'http://10.0.2.2:5000/api'; // Emulador Android -> PC localhost
   // static const String baseUrl = 'http://localhost:5000/api'; // iOS Simulator -> Mac localhost
-  //static const String baseUrl = 'http://192.168.1.85:5000/api'; // Reemplaza X con tu IP local
-  static const String baseUrl = 'http://10.7.2.6:5000/api';
-  //static const String baseUrl = 'http://192.168.43.102:5000/api';
+  //static const String baseUrl = 'http://172.16.4.86:5000/api'; // Reemplaza X con tu IP local
+  //static const String baseUrl = 'http://10.7.3.189:5000/api';
+  static const String baseUrl = 'http://192.168.43.102:5000/api';
 
 
   // Headers para las peticiones API
@@ -191,6 +191,42 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     return token != null;
+  }
+
+  // Enviar mensaje al chatbot backend + Gemini
+  static Future<Map<String, dynamic>> sendChatMessage(String message, {List<Map<String, dynamic>>? history}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/chat'),
+        headers: await _getHeaders(),
+        body: jsonEncode({
+          'message': message,
+          'history': history ?? [],
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'response': responseData['response'] ?? responseData['text'] ?? '',
+          'meta': responseData,
+        };
+      } else {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body)
+            : {'message': 'Error desconocido de chat'};
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Error desconocido de chat',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión (chat): ${e.toString()}',
+      };
+    }
   }
 
   // Obtener usuario actual desde almacenamiento local

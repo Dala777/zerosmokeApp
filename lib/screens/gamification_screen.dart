@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
+import '../models/emotional_entry.dart';
+import '../models/support_contact.dart';
+import '../widgets/emotional_diary_widget.dart';
+import '../widgets/support_network_widget.dart';
 
 class GamificationScreen extends StatefulWidget {
   const GamificationScreen({Key? key}) : super(key: key);
@@ -145,23 +149,15 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
       'isUnlocked': false,
     },
   ];
-  
-  // Datos del avatar
-  final Map<String, dynamic> _avatarData = {
-    'level': 3,
-    'name': 'Carlos',
-    'items': [
-      {'type': 'hair', 'name': 'Pelo corto', 'isEquipped': true},
-      {'type': 'eyes', 'name': 'Ojos azules', 'isEquipped': true},
-      {'type': 'outfit', 'name': 'Casual', 'isEquipped': true},
-      {'type': 'accessory', 'name': 'Gafas', 'isEquipped': false},
-    ],
-  };
+
+  // Listas para el diario emocional y red de apoyo
+  late List<EmotionalEntry> _emotionalEntries = [];
+  late List<SupportContact> _supportContacts = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -230,16 +226,22 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
         ),
         backgroundColor: AppColors.primary,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
           indicatorWeight: 3,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white.withOpacity(0.7),
+          isScrollable: true,
           tabs: const [
             Tab(text: "Logros"),
             Tab(text: "Recompensas"),
-            Tab(text: "Avatar"),
+            Tab(text: "Diario Emocional"),
+            Tab(text: "Red de Apoyo"),
           ],
         ),
       ),
@@ -252,8 +254,25 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
           // Pestaña de Recompensas
           _buildRewardsTab(),
           
-          // Pestaña de Avatar
-          _buildAvatarTab(),
+          // Pestaña de Diario Emocional
+          EmotionalDiaryWidget(
+            entries: _emotionalEntries,
+            onAddEntry: (entry) {
+              setState(() {
+                _emotionalEntries.insert(0, entry);
+              });
+            },
+          ),
+          
+          // Pestaña de Red de Apoyo
+          SupportNetworkWidget(
+            contacts: _supportContacts,
+            onAddContact: (contact) {
+              setState(() {
+                _supportContacts.add(contact);
+              });
+            },
+          ),
         ],
       ),
     );
@@ -478,164 +497,6 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
           const SizedBox(height: 16),
           
           ..._rewards.map((reward) => _buildRewardCard(reward)).toList(),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildAvatarTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Avatar preview
-          Center(
-            child: Column(
-              children: [
-                Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.primary,
-                      width: 3,
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.person,
-                      size: 100,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  "${_avatarData['name']}",
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    "Nivel ${_avatarData['level']}",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 32),
-          
-          // Personalización
-          const Text(
-            "Personaliza tu avatar",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.text,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Categorías de personalización
-          _buildAvatarCategory(
-            title: "Cabello",
-            items: [
-              {"name": "Pelo corto", "isSelected": true},
-              {"name": "Pelo largo", "isSelected": false},
-              {"name": "Calvo", "isSelected": false},
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          _buildAvatarCategory(
-            title: "Ojos",
-            items: [
-              {"name": "Ojos azules", "isSelected": true},
-              {"name": "Ojos marrones", "isSelected": false},
-              {"name": "Ojos verdes", "isSelected": false},
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          _buildAvatarCategory(
-            title: "Ropa",
-            items: [
-              {"name": "Casual", "isSelected": true},
-              {"name": "Formal", "isSelected": false},
-              {"name": "Deportivo", "isSelected": false},
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          _buildAvatarCategory(
-            title: "Accesorios",
-            items: [
-              {"name": "Ninguno", "isSelected": true},
-              {"name": "Gafas", "isSelected": false},
-              {"name": "Sombrero", "isSelected": false},
-            ],
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Botón de guardar
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                // Guardar cambios
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Cambios guardados con éxito'),
-                    backgroundColor: Colors.green,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                "Guardar cambios",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

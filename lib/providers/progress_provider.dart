@@ -34,6 +34,10 @@ class ProgressProvider extends ChangeNotifier {
 
     try {
       await getUserProgress();
+      // si ya existe progreso, también cargamos el plan diario inmediatamente
+      if (!_needsInitialTest) {
+        await getDailyPlan();
+      }
       await getWeeklyProgress();
       await getAchievements();
     } catch (e) {

@@ -12,6 +12,7 @@ class UserProgress {
   final Map<String, dynamic> healthMetrics;
   final Map<String, dynamic> achievements;
   final List<WeeklyProgress> weeklyData;
+  final Map<String, dynamic>? assignedPlan; // información básica del plan seleccionada
 
   UserProgress({
     required this.userId,
@@ -27,6 +28,7 @@ class UserProgress {
     this.healthMetrics = const {},
     this.achievements = const {},
     this.weeklyData = const [],
+    this.assignedPlan,
   });
 
   factory UserProgress.fromJson(Map<String, dynamic> json) {
@@ -49,6 +51,7 @@ class UserProgress {
           ? List<WeeklyProgress>.from(
               json['weeklyData'].map((x) => WeeklyProgress.fromJson(x)))
           : [],
+      assignedPlan: json['assignedPlan'] != null ? Map<String, dynamic>.from(json['assignedPlan']) : null,
     );
   }
 
@@ -67,6 +70,7 @@ class UserProgress {
       'healthMetrics': healthMetrics,
       'achievements': achievements,
       'weeklyData': weeklyData.map((x) => x.toJson()).toList(),
+      'assignedPlan': assignedPlan,
     };
   }
 
@@ -84,6 +88,7 @@ class UserProgress {
     Map<String, dynamic>? healthMetrics,
     Map<String, dynamic>? achievements,
     List<WeeklyProgress>? weeklyData,
+    Map<String, dynamic>? assignedPlan,
   }) {
     return UserProgress(
       userId: userId ?? this.userId,
@@ -99,6 +104,7 @@ class UserProgress {
       healthMetrics: healthMetrics ?? this.healthMetrics,
       achievements: achievements ?? this.achievements,
       weeklyData: weeklyData ?? this.weeklyData,
+      assignedPlan: assignedPlan ?? this.assignedPlan,
     );
   }
 

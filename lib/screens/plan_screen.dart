@@ -312,13 +312,34 @@ class _PlanScreenState extends State<PlanScreen> {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            "Día ${dailyPlan.dayNumber}",
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 20,
-                                            ),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "Día ${dailyPlan.dayNumber}",
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20,
+                                                ),
+                                              ),
+                                              if (progressProvider.userProgress?.dependencyLevel != null)
+                                                Text(
+                                                  "Dependencia: ${progressProvider.userProgress!.dependencyLevel}",
+                                                  style: const TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              if (progressProvider.userProgress?.assignedPlan?['name'] != null)
+                                                Text(
+                                                  "Plan: ${progressProvider.userProgress!.assignedPlan!['name']}",
+                                                  style: const TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                           Container(
                                             padding: const EdgeInsets.symmetric(
@@ -571,6 +592,30 @@ class _PlanScreenState extends State<PlanScreen> {
                 ),
               ),
             ],
+            if (activity.justification != null && activity.justification!.isNotEmpty)
+              ...[
+                const SizedBox(height: 8),
+                Text(
+                  "Justificación: ${activity.justification}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            if (activity.secondaryActivity != null &&
+                activity.secondaryActivity!['title'] != null)
+              ...[
+                const SizedBox(height: 8),
+                Text(
+                  "Actividad secundaria: ${activity.secondaryActivity!['title']}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             const SizedBox(height: 12),
             Row(
               children: [
@@ -615,6 +660,17 @@ class _PlanScreenState extends State<PlanScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(activity.description),
+                              if (activity.justification != null &&
+                                  activity.justification!.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                Text(
+                                  "Justificación: ${activity.justification}",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary.withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 16),
                               const Text(
                                 "Beneficios:",
