@@ -14,7 +14,7 @@ class ApiService {
   // static const String baseUrl = 'http://localhost:5000/api'; // iOS Simulator -> Mac localhost
   //static const String baseUrl = 'http://172.16.4.86:5000/api'; // Reemplaza X con tu IP local
   //static const String baseUrl = 'http://10.7.3.189:5000/api';
-  static const String baseUrl = 'http://192.168.43.102:5000/api';
+  static const String baseUrl = 'http://192.168.1.81:5000/api';
 
 
   // Headers para las peticiones API

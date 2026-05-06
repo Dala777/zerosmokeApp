@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'progress_screen.dart';
 import 'initial_test_screen.dart';
-import 'gamification_screen.dart'; // Nueva importación
+import 'gamification_screen.dart';
 import '../theme/app_colors.dart';
 import '../providers/progress_provider.dart';
+import '../models/daily_checkin.dart';
+import '../widgets/daily_checkin_widget.dart';
 import 'plan_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -20,13 +23,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   bool _isLoading = true;
   String _error = '';
+  bool _showingCheckInModal = false;
 
-  // Lista de pantallas que se mostrarán en la navegación
   final List<Widget> _screens = [
     const HomeScreen(),
     const PlanScreen(),
     const ProgressScreen(),
-    const GamificationScreen(), // Nueva pantalla de gamificación
+    const GamificationScreen(),
     const ProfileScreen(),
   ];
 
@@ -39,46 +42,118 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Usar Future.microtask para asegurarnos de que el widget está completamente montado
-    Future.microtask(() => _checkInitialTest());
+    Future.microtask(() async {
+      await _checkInitialTest();
+      await _checkDailyCheckIn();
+    });
   }
 
   Future<void> _checkInitialTest() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) setState(() => _isLoading = true);
 
     try {
-      // Verificar si el usuario necesita tomar el test inicial
-      final progressProvider = Provider.of<ProgressProvider>(context, listen: false);
-      
-      // Inicializar el provider de forma segura
+      final progressProvider =
+          Provider.of<ProgressProvider>(context, listen: false);
       await progressProvider.initialize();
-      
+
       if (progressProvider.needsInitialTest) {
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const InitialTestScreen()),
           );
+          return;
         }
       }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
+      if (mounted) setState(() => _error = e.toString());
       print('Error en _checkInitialTest: $_error');
     } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _checkDailyCheckIn() async {
+    if (!mounted || _showingCheckInModal) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastCheckInDate = prefs.getString('lastCheckInDate');
+
+      final today = DateTime.now();
+      final todayString =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+      if (lastCheckInDate != todayString) {
+        if (mounted && !_showingCheckInModal) {
+          setState(() => _showingCheckInModal = true);
+
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => Dialog(
+              insetPadding: const EdgeInsets.all(16),
+              backgroundColor: AppColors.cardBackground,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: DailyCheckInWidget(
+                isModal: true,
+                onSubmit: _handleCheckInSubmit,
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error checking daily check-in: $e');
+    }
+  }
+
+  void _handleCheckInSubmit(DailyCheckIn checkIn) async {
+    if (!mounted) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final todayString =
+          '${checkIn.date.year}-${checkIn.date.month.toString().padLeft(2, '0')}-${checkIn.date.day.toString().padLeft(2, '0')}';
+
+      await prefs.setString('lastCheckInDate', todayString);
+      await prefs.setString('lastCheckInData', checkIn.toJson().toString());
+
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _showingCheckInModal = false);
+
+        // ✅ Sin Navigator.pop() aquí — el widget ya lo hace internamente
+        // en su método _submitCheckIn() cuando isModal == true
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('¡Check-in completado! Excelente trabajo.'),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error saving check-in: $e');
+      if (mounted) {
+        setState(() => _showingCheckInModal = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al guardar check-in: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Mostrar indicador de carga mientras se inicializa
     if (_isLoading) {
       return Scaffold(
         body: Center(
@@ -89,7 +164,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
               const SizedBox(height: 16),
-              Text('Cargando tu información...', 
+              Text(
+                'Cargando tu información...',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
             ],
@@ -98,7 +174,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    // Mostrar error si ocurrió alguno
     if (_error.isNotEmpty) {
       return Scaffold(
         body: Center(
@@ -107,12 +182,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text('Error: $_error', 
+              Text(
+                'Error: $_error',
                 style: const TextStyle(color: Colors.red),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _checkInitialTest,
+                onPressed: () async {
+                  setState(() => _error = '');
+                  await _checkInitialTest();
+                  await _checkDailyCheckIn();
+                },
                 child: const Text('Reintentar'),
               ),
             ],
@@ -121,7 +201,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    // Mostrar la pantalla normal con navegación mejorada
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: Container(
