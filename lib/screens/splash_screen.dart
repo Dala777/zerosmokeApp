@@ -29,14 +29,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(0.0, 0.5, curve: Curves.easeIn),
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
       ),
     );
     
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(0.0, 0.5, curve: Curves.easeOutBack),
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack),
       ),
     );
     
@@ -108,10 +108,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       children: [
                         // Logo con sombra
                         Container(
-                          width: 160,
-                          height: 160,
+                          width: 180,
+                          height: 180,
                           decoration: BoxDecoration(
-                            color: AppColors.cardBackground,
+                            color: Colors.white,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
@@ -121,11 +121,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: Icon(
-                              Icons.health_and_safety,
-                              size: 80,
-                              color: AppColors.primary,
+                          child: ClipOval(
+                            child: Padding(
+                              padding: const EdgeInsets.all(15.0),
+                              child: Image.asset(
+                                'assets/images/logoZS.png',
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                         ),
@@ -134,9 +136,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         Text(
                           "ZeroSmoke",
                           style: TextStyle(
-                            fontSize: 32,
+                            fontSize: 36,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.text,
+                            color: AppColors.primary,
                             letterSpacing: 1.2,
                           ),
                         ),
@@ -171,4 +173,3 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
   }
 }
-

@@ -5,6 +5,8 @@ class Activity {
   final String type; // 'exercise', 'reflection', 'breathing', etc.
   final int durationMinutes;
   final bool isCompleted;
+  final String? justification;
+  final Map<String, dynamic>? secondaryActivity;
 
   Activity({
     required this.id,
@@ -13,6 +15,8 @@ class Activity {
     required this.type,
     required this.durationMinutes,
     this.isCompleted = false,
+    this.justification,
+    this.secondaryActivity,
   });
 
   factory Activity.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class Activity {
       type: json['type'] ?? '',
       durationMinutes: json['durationMinutes'] ?? 0,
       isCompleted: json['isCompleted'] ?? false,
+      justification: json['justification'],
+      secondaryActivity: json['secondaryActivity'],
     );
   }
 
@@ -34,6 +40,8 @@ class Activity {
       'type': type,
       'durationMinutes': durationMinutes,
       'isCompleted': isCompleted,
+      'justification': justification,
+      'secondaryActivity': secondaryActivity,
     };
   }
 
@@ -44,6 +52,8 @@ class Activity {
     String? type,
     int? durationMinutes,
     bool? isCompleted,
+    String? justification,
+    Map<String, dynamic>? secondaryActivity,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -52,6 +62,8 @@ class Activity {
       type: type ?? this.type,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       isCompleted: isCompleted ?? this.isCompleted,
+      justification: justification ?? this.justification,
+      secondaryActivity: secondaryActivity ?? this.secondaryActivity,
     );
   }
 }

@@ -109,7 +109,40 @@ class _InitialTestScreenState extends State<InitialTestScreen> {
     if (mounted) Navigator.of(context).pop();
     
     if (success) {
-      // Navegar al dashboard
+      // Calcular resultados para mostrar al usuario
+      final dependencyLevel = test.calculateDependencyLevel();
+      final monthlyCost = test.calculateMonthlyExpenditure();
+
+      if (mounted) {
+        // Mostrar diálogo con el nivel de dependencia y gasto mensual
+        await showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Resultados del test'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Nivel de dependencia: $dependencyLevel'),
+                  const SizedBox(height: 8),
+                  Text('Gasto mensual aproximado: \$${monthlyCost.toStringAsFixed(2)}'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Continuar'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+
+      // Una vez que el usuario cierre el diálogo, ir al dashboard
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardScreen()),
@@ -132,10 +165,10 @@ class _InitialTestScreenState extends State<InitialTestScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
-          "Test Inicial",
+          "Test Fagerström",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color.fromARGB(255, 105, 229, 105),
         elevation: 0,
       ),
       body: SafeArea(
