@@ -13,14 +13,14 @@ import '../widgets/daily_checkin_widget.dart';
 import 'plan_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({Key? key}) : super(key: key);
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedIndex = 0;
+  int _currentIndex = 0;
   bool _isLoading = true;
   String _error = '';
   bool _showingCheckInModal = false;
@@ -152,6 +152,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _showEmergencyBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const EmergencyBottomSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -168,11 +177,227 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 'Cargando tu información...',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
-            ],
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showEmergencyBottomSheet,
+        backgroundColor: Colors.red,
+        child: const Icon(Icons.emergency, color: Colors.white),
+      ),
+      bottomNavigationBar: NavigationMenu(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          
+          switch (index) {
+            case 0:
+              // Ya estamos en Dashboard
+              break;
+            case 1:
+              Navigator.pushReplacementNamed(context, '/plan');
+              break;
+            case 2:
+              Navigator.pushReplacementNamed(context, '/progress');
+              break;
+            case 3:
+              Navigator.pushReplacementNamed(context, '/profile');
+              break;
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildDaysCounter(DateTime quitDate) {
+    final difference = DateTime.now().difference(quitDate);
+    final days = difference.inDays;
+    
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Text(
+              'Días sin fumar',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '$days',
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: AppColors.accentColor,
+              ),
+            ),
+            Text(
+              'Desde ${_formatDate(quitDate)}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHealthScore(int score) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Puntuación de salud',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: CircularPercentIndicator(
+                radius: 80,
+                lineWidth: 12,
+                percent: score / 100,
+                center: Text(
+                  '$score%',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                progressColor: _getColorForScore(score),
+                backgroundColor: Colors.grey[300]!,
+                circularStrokeCap: CircularStrokeCap.round,
+                animation: true,
+                animationDuration: 1500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _getHealthMessage(score),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSavingsAndCigarettes(double moneySaved, int cigarettesNotSmoked) {
+    return Row(
+      children: [
+        Expanded(
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.savings,
+                    size: 32,
+                    color: Colors.green,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Dinero ahorrado',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '\$${moneySaved.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-      );
-    }
+        const SizedBox(width: 16),
+        Expanded(
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.smoke_free,
+                    size: 32,
+                    color: Colors.blue,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Cigarrillos no fumados',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$cigarettesNotSmoked',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHealthBenefits() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Beneficios para tu salud',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        const HealthBenefitWidget(),
+      ],
+    );
+  }
 
     if (_error.isNotEmpty) {
       return Scaffold(
@@ -198,8 +423,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
-      );
-    }
+      ],
+    );
+  }
 
     return Scaffold(
       body: _screens[_selectedIndex],
