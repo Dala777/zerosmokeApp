@@ -89,8 +89,8 @@ class DailyPlan {
 
   factory DailyPlan.fromJson(Map<String, dynamic> json) {
     return DailyPlan(
-      id: json['id'] ?? '',
-      userId: json['userId'] ?? '',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['userId'] ?? '').toString(),
       date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
       activities: json['activities'] != null
           ? List<Activity>.from(
