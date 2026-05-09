@@ -19,16 +19,24 @@ class Activity {
     this.secondaryActivity,
   });
 
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
   factory Activity.fromJson(Map<String, dynamic> json) {
     return Activity(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       type: json['type'] ?? '',
-      durationMinutes: json['durationMinutes'] ?? 0,
+      durationMinutes: _toInt(json['durationMinutes']),
       isCompleted: json['isCompleted'] ?? false,
       justification: json['justification'],
-      secondaryActivity: json['secondaryActivity'],
+      secondaryActivity: json['secondaryActivity'] is Map
+          ? Map<String, dynamic>.from(json['secondaryActivity'])
+          : null,
     );
   }
 
@@ -88,17 +96,20 @@ class DailyPlan {
   });
 
   factory DailyPlan.fromJson(Map<String, dynamic> json) {
+    final rawActivities = json['activities'];
+
     return DailyPlan(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       userId: (json['userId'] ?? '').toString(),
       date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
-      activities: json['activities'] != null
-          ? List<Activity>.from(
-              json['activities'].map((x) => Activity.fromJson(x)))
+      activities: rawActivities is List
+          ? rawActivities
+              .map<Activity>((x) => Activity.fromJson(Map<String, dynamic>.from(x)))
+              .toList()
           : [],
       isCompleted: json['isCompleted'] ?? false,
       message: json['message'] ?? '',
-      dayNumber: json['dayNumber'] ?? 0,
+      dayNumber: Activity._toInt(json['dayNumber']),
     );
   }
 

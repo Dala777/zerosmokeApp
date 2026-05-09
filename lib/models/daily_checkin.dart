@@ -6,6 +6,7 @@ class DailyCheckIn {
   final String mood; // 'excelente', 'bueno', 'normal', 'triste', 'terrible'
   final int cravingLevel; // 0-5
   final bool smokedToday;
+  final int cigarettesSmokedCount;
   final List<String> physicalSymptoms; // opcional: ['dolor_cabeza', 'ansiedad', 'insomnio', etc]
   final String? note;
   final DateTime createdAt;
@@ -16,6 +17,7 @@ class DailyCheckIn {
     required this.mood,
     required this.cravingLevel,
     required this.smokedToday,
+    this.cigarettesSmokedCount = 0,
     this.physicalSymptoms = const [],
     this.note,
     required this.createdAt,
@@ -29,6 +31,8 @@ class DailyCheckIn {
       'mood': mood,
       'cravingLevel': cravingLevel,
       'smokedToday': smokedToday,
+      'cigarettesSmokedCount': cigarettesSmokedCount,
+      'symptoms': physicalSymptoms,
       'physicalSymptoms': physicalSymptoms,
       'note': note,
       'createdAt': createdAt.toIso8601String(),
@@ -38,15 +42,22 @@ class DailyCheckIn {
   // Crear desde JSON
   factory DailyCheckIn.fromJson(Map<String, dynamic> json) {
     return DailyCheckIn(
-      id: json['id'] as String,
-      date: DateTime.parse(json['date'] as String),
-      mood: json['mood'] as String,
-      cravingLevel: json['cravingLevel'] as int,
-      smokedToday: json['smokedToday'] as bool,
-      physicalSymptoms: List<String>.from(json['physicalSymptoms'] as List? ?? []),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      date: DateTime.parse((json['date'] ?? DateTime.now().toIso8601String()).toString()),
+      mood: (json['mood'] ?? 'normal').toString(),
+      cravingLevel: _toInt(json['cravingLevel']),
+      smokedToday: json['smokedToday'] == true,
+      cigarettesSmokedCount: _toInt(json['cigarettesSmokedCount']),
+      physicalSymptoms: List<String>.from((json['symptoms'] ?? json['physicalSymptoms'] ?? []) as List? ?? []),
       note: json['note'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.parse((json['createdAt'] ?? DateTime.now().toIso8601String()).toString()),
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   // Copiar con cambios
@@ -56,6 +67,7 @@ class DailyCheckIn {
     String? mood,
     int? cravingLevel,
     bool? smokedToday,
+    int? cigarettesSmokedCount,
     List<String>? physicalSymptoms,
     String? note,
     DateTime? createdAt,
@@ -66,6 +78,7 @@ class DailyCheckIn {
       mood: mood ?? this.mood,
       cravingLevel: cravingLevel ?? this.cravingLevel,
       smokedToday: smokedToday ?? this.smokedToday,
+      cigarettesSmokedCount: cigarettesSmokedCount ?? this.cigarettesSmokedCount,
       physicalSymptoms: physicalSymptoms ?? this.physicalSymptoms,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,

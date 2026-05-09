@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../models/user_progress.dart';
+import '../providers/progress_provider.dart';
 import '../theme/app_colors.dart';
 import '../models/emotional_entry.dart';
 import '../models/support_contact.dart';
@@ -16,90 +19,6 @@ class GamificationScreen extends StatefulWidget {
 class _GamificationScreenState extends State<GamificationScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _motivationPoints = 350; // Puntos de motivación del usuario
-  
-  // Lista de logros
-  final List<Map<String, dynamic>> _achievements = [
-    {
-      'id': 'day1',
-      'title': 'Primer día sin fumar',
-      'description': 'Completaste tu primer día sin fumar. ¡El primer paso hacia una vida más saludable!',
-      'icon': Icons.calendar_today,
-      'color': Colors.blue,
-      'isCompleted': true,
-      'date': '15/04/2023',
-      'points': 50,
-    },
-    {
-      'id': 'week1',
-      'title': 'Una semana sin fumar',
-      'description': 'Has completado 7 días consecutivos sin fumar. ¡Tu cuerpo ya está notando los beneficios!',
-      'icon': Icons.calendar_view_week,
-      'color': Colors.green,
-      'isCompleted': true,
-      'date': '22/04/2023',
-      'points': 100,
-    },
-    {
-      'id': 'activities10',
-      'title': '10 actividades completadas',
-      'description': 'Has completado 10 actividades de tu plan personalizado.',
-      'icon': Icons.check_circle,
-      'color': Colors.purple,
-      'isCompleted': true,
-      'date': '25/04/2023',
-      'points': 75,
-    },
-    {
-      'id': 'month1',
-      'title': 'Un mes sin fumar',
-      'description': 'Has completado 30 días sin fumar. ¡Tu riesgo de enfermedades cardíacas ha disminuido!',
-      'icon': Icons.calendar_month,
-      'color': Colors.orange,
-      'isCompleted': false,
-      'progress': 0.7,
-      'points': 200,
-    },
-    {
-      'id': 'money50',
-      'title': 'Ahorro de bs. 50',
-      'description': 'Has ahorrado bs. 50 al no comprar cigarrillos.',
-      'icon': Icons.savings,
-      'color': Colors.amber,
-      'isCompleted': true,
-      'date': '28/04/2023',
-      'points': 50,
-    },
-    {
-      'id': 'streak10',
-      'title': 'Racha de 10 días',
-      'description': 'Has completado actividades durante 10 días consecutivos.',
-      'icon': Icons.local_fire_department,
-      'color': Colors.red,
-      'isCompleted': false,
-      'progress': 0.8,
-      'points': 100,
-    },
-    {
-      'id': 'health25',
-      'title': '25% de mejora en salud',
-      'description': 'Tu salud ha mejorado un 25% desde que dejaste de fumar.',
-      'icon': Icons.favorite,
-      'color': Colors.pink,
-      'isCompleted': true,
-      'date': '01/05/2023',
-      'points': 75,
-    },
-    {
-      'id': 'cravings20',
-      'title': 'Superaste 20 antojos',
-      'description': 'Has utilizado técnicas para superar 20 antojos de fumar.',
-      'icon': Icons.psychology,
-      'color': Colors.teal,
-      'isCompleted': false,
-      'progress': 0.5,
-      'points': 100,
-    },
-  ];
   
   // Lista de recompensas
   final List<Map<String, dynamic>> _rewards = [
@@ -158,6 +77,11 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<ProgressProvider>(context, listen: false);
+      provider.loadUserProgress();
+      provider.loadAchievements();
+    });
   }
 
   @override
@@ -213,6 +137,40 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
       }
     }
     return 0;
+  }
+
+  Map<String, dynamic> _achievementViewModel(Achievement achievement) {
+    final visual = _achievementVisual(achievement.id);
+    return {
+      'id': achievement.id,
+      'title': achievement.title,
+      'description': achievement.description,
+      'icon': visual['icon'],
+      'color': visual['color'],
+      'isCompleted': achievement.isCompleted,
+      'date': achievement.date != null ? _formatDate(achievement.date!) : '',
+      'progress': achievement.progress.clamp(0.0, 1.0).toDouble(),
+      'points': visual['points'],
+    };
+  }
+
+  Map<String, dynamic> _achievementVisual(String id) {
+    switch (id) {
+      case 'firstDay':
+        return {'icon': Icons.calendar_today, 'color': Colors.blue, 'points': 50};
+      case 'firstWeek':
+        return {'icon': Icons.calendar_view_week, 'color': Colors.green, 'points': 100};
+      case 'firstMonth':
+        return {'icon': Icons.calendar_month, 'color': Colors.orange, 'points': 200};
+      case 'moneySaved':
+        return {'icon': Icons.savings, 'color': Colors.amber, 'points': 75};
+      default:
+        return {'icon': Icons.emoji_events, 'color': AppColors.primary, 'points': 50};
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
   @override
@@ -279,9 +237,15 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
   }
   
   Widget _buildAchievementsTab() {
+    final progressProvider = Provider.of<ProgressProvider>(context);
+    final achievements = progressProvider.achievements.map(_achievementViewModel).toList();
     // Separar logros completados y pendientes
-    final completedAchievements = _achievements.where((a) => a['isCompleted'] == true).toList();
-    final pendingAchievements = _achievements.where((a) => a['isCompleted'] != true).toList();
+    final completedAchievements = achievements.where((a) => a['isCompleted'] == true).toList();
+    final pendingAchievements = achievements.where((a) => a['isCompleted'] != true).toList();
+    final motivationPoints = progressProvider.userProgress?.motivationPoints ?? completedAchievements.fold<int>(
+      0,
+      (total, achievement) => total + ((achievement['points'] ?? 0) as int),
+    );
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -337,7 +301,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "$_motivationPoints MP",
+                      "$motivationPoints MP",
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -388,10 +352,13 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
           ),
           const SizedBox(height: 16),
           
-          ...completedAchievements.map((achievement) => _buildAchievementCard(
-            achievement: achievement,
-            isCompleted: true,
-          )).toList(),
+          if (completedAchievements.isEmpty)
+            _buildEmptyAchievementsMessage("Aún no hay logros completados")
+          else
+            ...completedAchievements.map((achievement) => _buildAchievementCard(
+              achievement: achievement,
+              isCompleted: true,
+            )).toList(),
           
           const SizedBox(height: 24),
           
@@ -406,16 +373,39 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
           ),
           const SizedBox(height: 16),
           
-          ...pendingAchievements.map((achievement) => _buildAchievementCard(
-            achievement: achievement,
-            isCompleted: false,
-          )).toList(),
+          if (pendingAchievements.isEmpty)
+            _buildEmptyAchievementsMessage("No hay logros pendientes")
+          else
+            ...pendingAchievements.map((achievement) => _buildAchievementCard(
+              achievement: achievement,
+              isCompleted: false,
+            )).toList(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyAchievementsMessage(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        message,
+        style: TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 14,
+        ),
       ),
     );
   }
   
   Widget _buildRewardsTab() {
+    final motivationPoints = Provider.of<ProgressProvider>(context).userProgress?.motivationPoints ?? _motivationPoints;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -470,7 +460,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "$_motivationPoints MP",
+                      "$motivationPoints MP",
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -632,8 +622,9 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
   }
   
   Widget _buildRewardCard(Map<String, dynamic> reward) {
+    final availablePoints = Provider.of<ProgressProvider>(context, listen: false).userProgress?.motivationPoints ?? _motivationPoints;
     final bool isUnlocked = reward['isUnlocked'] == true;
-    final bool canUnlock = _motivationPoints >= reward['cost'];
+    final bool canUnlock = availablePoints >= reward['cost'];
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

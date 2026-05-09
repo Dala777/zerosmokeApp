@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/smoking_record.dart';
 import '../models/user_progress.dart';
 import '../models/daily_plan.dart';
+import '../models/daily_checkin.dart';
 import '../models/initial_test.dart';
 import 'api_service.dart';
 
@@ -110,6 +111,53 @@ class ProgressService {
 
       return {
         'success': response.statusCode == 200,
+        'message': responseData['message'] ?? 'Unknown error',
+        'data': responseData['data'],
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> getTodayDailyCheckIn() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/progress/daily-checkin/today'),
+        headers: headers,
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      return {
+        'success': response.statusCode == 200,
+        'message': responseData['message'] ?? 'Unknown error',
+        'data': responseData['data'],
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> saveDailyCheckIn(DailyCheckIn checkIn) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/progress/daily-checkin'),
+        headers: headers,
+        body: jsonEncode(checkIn.toJson()),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      return {
+        'success': response.statusCode == 200 || response.statusCode == 201,
         'message': responseData['message'] ?? 'Unknown error',
         'data': responseData['data'],
       };

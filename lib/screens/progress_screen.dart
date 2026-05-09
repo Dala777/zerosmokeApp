@@ -397,7 +397,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
     final currentWeek = weeklyData.first;
     final dailyCigarettes = currentWeek.dailyCigarettes;
     final maxCigarettes = dailyCigarettes.isEmpty ? 10 : dailyCigarettes.reduce((a, b) => a > b ? a : b);
-    final completionPercentage = currentWeek.completionPercentage / 100;
+    final completionPercentage = (currentWeek.completionPercentage / 100).clamp(0.0, 1.0).toDouble();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -435,7 +435,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
           const SizedBox(height: 20),
           LinearPercentIndicator(
             lineHeight: 10.0,
-            percent: completionPercentage.clamp(0.0, 1.0),
+            percent: completionPercentage,
             backgroundColor: AppColors.tertiary.withOpacity(0.5),
             progressColor: AppColors.primary,
             barRadius: const Radius.circular(10),
@@ -448,7 +448,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Meta semanal: ${(currentWeek.completionPercentage).toInt()}% completada",
+                "Reducción semanal: ${(currentWeek.completionPercentage).toInt()}%",
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
@@ -462,7 +462,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  "${currentWeek.totalSmoked}/${currentWeek.weeklyGoal}",
+                  "${currentWeek.totalSmoked} fumados",
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -472,6 +472,16 @@ class _ProgressScreenState extends State<ProgressScreen> {
               ),
             ],
           ),
+          if (currentWeek.label.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              currentWeek.label,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -587,6 +597,15 @@ class _ProgressScreenState extends State<ProgressScreen> {
             ],
           ),
           const SizedBox(height: 20),
+
+          if (achievements.isEmpty)
+            Text(
+              "Aún no hay logros disponibles",
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
           
           // Logros completados
           ...completedAchievements.map((achievement) => _buildAchievementItem(
@@ -678,7 +697,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   const SizedBox(height: 8),
                   LinearPercentIndicator(
                     lineHeight: 6.0,
-                    percent: progress.clamp(0.0, 1.0),
+                    percent: progress.clamp(0.0, 1.0).toDouble(),
                     backgroundColor: AppColors.tertiary.withOpacity(0.5),
                     progressColor: color,
                     barRadius: const Radius.circular(10),
@@ -707,6 +726,16 @@ class _ProgressScreenState extends State<ProgressScreen> {
   }
 
   Widget _buildEmotionAnalysis() {
+    final realEmotions = Provider.of<ProgressProvider>(context).userProgress?.emotionStats ?? [];
+    if (realEmotions.isNotEmpty) {
+      return _buildSimpleStatsCard(
+        title: "Análisis de emociones",
+        icon: FontAwesomeIcons.faceFrown,
+        subtitle: "Datos de tus check-ins diarios",
+        items: realEmotions,
+      );
+    }
+
     final emotions = [
       {'name': 'Estrés', 'count': 12, 'color': AppColors.error},
       {'name': 'Ansiedad', 'count': 8, 'color': AppColors.warning},
@@ -806,6 +835,16 @@ class _ProgressScreenState extends State<ProgressScreen> {
   }
 
   Widget _buildSymptomAnalysis() {
+    final realSymptoms = Provider.of<ProgressProvider>(context).userProgress?.symptomStats ?? [];
+    if (realSymptoms.isNotEmpty) {
+      return _buildSimpleStatsCard(
+        title: "Síntomas físicos",
+        icon: FontAwesomeIcons.stethoscope,
+        subtitle: "Datos de tus check-ins diarios",
+        items: realSymptoms,
+      );
+    }
+
     final symptoms = [
       {'name': 'Tos', 'count': 10, 'trend': 'down'},
       {'name': 'Dificultad para respirar', 'count': 7, 'trend': 'down'},
@@ -895,7 +934,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         CircularPercentIndicator(
                           radius: 22.0,
                           lineWidth: 4.0,
-                          percent: (symptom['count'] as int) / 20,
+                          percent: ((symptom['count'] as int) / 20).clamp(0.0, 1.0).toDouble(),
                           center: Text(
                             "${symptom['count']}",
                             style: const TextStyle(
@@ -936,6 +975,86 @@ class _ProgressScreenState extends State<ProgressScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildSimpleStatsCard({
+    required String title,
+    required IconData icon,
+    required String subtitle,
+    required List<Map<String, dynamic>> items,
+  }) {
+    final total = items.fold<int>(
+      0,
+      (sum, item) => sum + ((item['count'] as num?)?.toInt() ?? 0),
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textSecondary.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(title: title, icon: icon, subtitle: subtitle),
+          const SizedBox(height: 20),
+          ...items.map((item) {
+            final count = ((item['count'] as num?)?.toInt() ?? 0);
+            final percent = total > 0 ? (count / total).clamp(0.0, 1.0).toDouble() : 0.0;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _formatStatName((item['name'] ?? '').toString()),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text,
+                        ),
+                      ),
+                      Text(
+                        "$count veces",
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  LinearPercentIndicator(
+                    lineHeight: 8,
+                    percent: percent,
+                    backgroundColor: AppColors.tertiary.withOpacity(0.5),
+                    progressColor: AppColors.primary,
+                    barRadius: const Radius.circular(10),
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  String _formatStatName(String value) {
+    if (value.isEmpty) return "Sin dato";
+    return value
+        .split(' ')
+        .map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
+        .join(' ');
   }
 
   Widget _buildSectionHeader({

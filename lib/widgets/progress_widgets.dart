@@ -4,13 +4,17 @@ import '../theme/app_colors.dart';
 class ProgressWidget extends StatelessWidget {
   final int daysWithoutSmoking;
   final double moneySaved;
-  final double healthProgress;
+  final double planProgress;
+  final int planCurrentDay;
+  final int planTotalDays;
 
   const ProgressWidget({
     Key? key,
     required this.daysWithoutSmoking,
     required this.moneySaved,
-    required this.healthProgress,
+    required this.planProgress,
+    required this.planCurrentDay,
+    required this.planTotalDays,
   }) : super(key: key);
 
   @override
@@ -130,7 +134,7 @@ class ProgressWidget extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 20),
-        // Progreso de salud
+        // Progreso del plan
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -138,7 +142,7 @@ class ProgressWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  "Progreso de salud",
+                  "Progreso del plan",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -146,7 +150,9 @@ class ProgressWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "${(healthProgress * 100).toInt()}%",
+                  planTotalDays > 0
+                      ? "$planCurrentDay/$planTotalDays"
+                      : "${(planProgress * 100).toInt()}%",
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -159,7 +165,7 @@ class ProgressWidget extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
-                value: healthProgress,
+                value: planProgress.clamp(0.0, 1.0).toDouble(),
                 minHeight: 12,
                 backgroundColor: Colors.grey.shade200,
                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
@@ -167,7 +173,7 @@ class ProgressWidget extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              _getHealthMessage(healthProgress),
+              _getPlanMessage(),
               style: const TextStyle(
                 fontSize: 14,
                 fontStyle: FontStyle.italic,
@@ -178,6 +184,13 @@ class ProgressWidget extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _getPlanMessage() {
+    if (planTotalDays <= 0) {
+      return "Tu plan se sincronizará cuando haya una asignación activa.";
+    }
+    return "Vas en el día $planCurrentDay de $planTotalDays de tu plan personalizado.";
   }
 
   String _getHealthMessage(double progress) {

@@ -7,12 +7,37 @@ class UserProgress {
   final double moneySaved;
   final int daysWithoutSmoking;
   final double healthProgress;
+  final int cigarettesSmokedToday;
+  final int bestStreak;
+  final int planCurrentDay;
+  final int planTotalDays;
+  final double planProgress;
+  final int motivationPoints;
+  final List<Map<String, dynamic>> emotionStats;
+  final List<Map<String, dynamic>> symptomStats;
   final String dependencyLevel;
   final List<String> motivations;
   final Map<String, dynamic> healthMetrics;
   final Map<String, dynamic> achievements;
   final List<WeeklyProgress> weeklyData;
   final Map<String, dynamic>? assignedPlan; // información básica del plan seleccionada
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0.0;
+  }
+
+  static List<Map<String, dynamic>> _mapList(dynamic value) {
+    if (value is! List) return [];
+    return value.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+  }
 
   UserProgress({
     required this.userId,
@@ -23,6 +48,14 @@ class UserProgress {
     this.moneySaved = 0.0,
     this.daysWithoutSmoking = 0,
     this.healthProgress = 0.0,
+    this.cigarettesSmokedToday = 0,
+    this.bestStreak = 0,
+    this.planCurrentDay = 0,
+    this.planTotalDays = 0,
+    this.planProgress = 0.0,
+    this.motivationPoints = 0,
+    this.emotionStats = const [],
+    this.symptomStats = const [],
     this.dependencyLevel = 'Moderado',
     this.motivations = const [],
     this.healthMetrics = const {},
@@ -32,26 +65,39 @@ class UserProgress {
   });
 
   factory UserProgress.fromJson(Map<String, dynamic> json) {
+    final rawWeeklyData = json['weeklyData'];
+
     return UserProgress(
       userId: json['userId'] ?? '',
       startDate: json['startDate'] != null 
           ? DateTime.parse(json['startDate']) 
           : DateTime.now(),
-      cigarettesPerDay: json['cigarettesPerDay'] ?? 0,
-      packagePrice: (json['packagePrice'] ?? 0.0).toDouble(),
-      cigarettesAvoided: json['cigarettesAvoided'] ?? 0,
-      moneySaved: (json['moneySaved'] ?? 0.0).toDouble(),
-      daysWithoutSmoking: json['daysWithoutSmoking'] ?? 0,
-      healthProgress: (json['healthProgress'] ?? 0.0).toDouble(),
+      cigarettesPerDay: _toInt(json['cigarettesPerDay']),
+      packagePrice: _toDouble(json['packagePrice']),
+      cigarettesAvoided: _toInt(json['cigarettesAvoided']),
+      moneySaved: _toDouble(json['moneySaved']),
+      daysWithoutSmoking: _toInt(json['daysWithoutSmoking']),
+      healthProgress: _toDouble(json['healthProgress']),
+      cigarettesSmokedToday: _toInt(json['cigarettesSmokedToday']),
+      bestStreak: _toInt(json['bestStreak']),
+      planCurrentDay: _toInt(json['planCurrentDay']),
+      planTotalDays: _toInt(json['planTotalDays']),
+      planProgress: _toDouble(json['planProgress']),
+      motivationPoints: _toInt(json['motivationPoints']),
+      emotionStats: _mapList(json['emotionStats']),
+      symptomStats: _mapList(json['symptomStats']),
       dependencyLevel: json['dependencyLevel'] ?? 'Moderado',
       motivations: List<String>.from(json['motivations'] ?? []),
       healthMetrics: json['healthMetrics'] ?? {},
       achievements: json['achievements'] ?? {},
-      weeklyData: json['weeklyData'] != null
-          ? List<WeeklyProgress>.from(
-              json['weeklyData'].map((x) => WeeklyProgress.fromJson(x)))
+      weeklyData: rawWeeklyData is List
+          ? rawWeeklyData.map<WeeklyProgress>(
+              (x) => WeeklyProgress.fromJson(Map<String, dynamic>.from(x)),
+            ).toList()
           : [],
-      assignedPlan: json['assignedPlan'] != null ? Map<String, dynamic>.from(json['assignedPlan']) : null,
+      assignedPlan: json['assignedPlan'] != null
+          ? Map<String, dynamic>.from(json['assignedPlan'])
+          : null,
     );
   }
 
@@ -65,6 +111,14 @@ class UserProgress {
       'moneySaved': moneySaved,
       'daysWithoutSmoking': daysWithoutSmoking,
       'healthProgress': healthProgress,
+      'cigarettesSmokedToday': cigarettesSmokedToday,
+      'bestStreak': bestStreak,
+      'planCurrentDay': planCurrentDay,
+      'planTotalDays': planTotalDays,
+      'planProgress': planProgress,
+      'motivationPoints': motivationPoints,
+      'emotionStats': emotionStats,
+      'symptomStats': symptomStats,
       'dependencyLevel': dependencyLevel,
       'motivations': motivations,
       'healthMetrics': healthMetrics,
@@ -83,6 +137,14 @@ class UserProgress {
     double? moneySaved,
     int? daysWithoutSmoking,
     double? healthProgress,
+    int? cigarettesSmokedToday,
+    int? bestStreak,
+    int? planCurrentDay,
+    int? planTotalDays,
+    double? planProgress,
+    int? motivationPoints,
+    List<Map<String, dynamic>>? emotionStats,
+    List<Map<String, dynamic>>? symptomStats,
     String? dependencyLevel,
     List<String>? motivations,
     Map<String, dynamic>? healthMetrics,
@@ -99,6 +161,14 @@ class UserProgress {
       moneySaved: moneySaved ?? this.moneySaved,
       daysWithoutSmoking: daysWithoutSmoking ?? this.daysWithoutSmoking,
       healthProgress: healthProgress ?? this.healthProgress,
+      cigarettesSmokedToday: cigarettesSmokedToday ?? this.cigarettesSmokedToday,
+      bestStreak: bestStreak ?? this.bestStreak,
+      planCurrentDay: planCurrentDay ?? this.planCurrentDay,
+      planTotalDays: planTotalDays ?? this.planTotalDays,
+      planProgress: planProgress ?? this.planProgress,
+      motivationPoints: motivationPoints ?? this.motivationPoints,
+      emotionStats: emotionStats ?? this.emotionStats,
+      symptomStats: symptomStats ?? this.symptomStats,
       dependencyLevel: dependencyLevel ?? this.dependencyLevel,
       motivations: motivations ?? this.motivations,
       healthMetrics: healthMetrics ?? this.healthMetrics,
@@ -110,8 +180,9 @@ class UserProgress {
 
   // Calcular el porcentaje de reducción
   double get reductionPercentage {
-    if (cigarettesPerDay == 0) return 0.0;
-    return (cigarettesAvoided / (daysWithoutSmoking * cigarettesPerDay)) * 100;
+    final baseline = daysWithoutSmoking * cigarettesPerDay;
+    if (cigarettesPerDay <= 0 || daysWithoutSmoking <= 0 || baseline <= 0) return 0.0;
+    return (cigarettesAvoided / baseline) * 100;
   }
 
   // Obtener logros completados
@@ -142,7 +213,7 @@ class UserProgress {
           description: value['description'] ?? '',
           date: null,
           isCompleted: false,
-          progress: value['progress'] ?? 0.0,
+          progress: _toDouble(value['progress']),
         ));
       }
     });
@@ -156,22 +227,42 @@ class WeeklyProgress {
   final List<int> dailyCigarettes;
   final int weeklyGoal;
   final int totalSmoked;
+  final int baselineExpected;
+  final int cigarettesAvoided;
+  final int reductionPercentage;
+  final String label;
 
   WeeklyProgress({
     required this.weekStart,
     required this.dailyCigarettes,
     required this.weeklyGoal,
     required this.totalSmoked,
+    this.baselineExpected = 0,
+    this.cigarettesAvoided = 0,
+    this.reductionPercentage = 0,
+    this.label = '',
   });
 
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
   factory WeeklyProgress.fromJson(Map<String, dynamic> json) {
+    final rawDaily =
+        json['dailyCigarettes'] is List ? json['dailyCigarettes'] as List : const [];
     return WeeklyProgress(
       weekStart: json['weekStart'] != null 
           ? DateTime.parse(json['weekStart']) 
           : DateTime.now(),
-      dailyCigarettes: List<int>.from(json['dailyCigarettes'] ?? [0, 0, 0, 0, 0, 0, 0]),
-      weeklyGoal: json['weeklyGoal'] ?? 0,
-      totalSmoked: json['totalSmoked'] ?? 0,
+      dailyCigarettes: rawDaily.map<int>(_toInt).toList(),
+      weeklyGoal: _toInt(json['weeklyGoal']),
+      totalSmoked: _toInt(json['totalSmoked']),
+      baselineExpected: _toInt(json['baselineExpected'] ?? json['weeklyGoal']),
+      cigarettesAvoided: _toInt(json['cigarettesAvoided']),
+      reductionPercentage: _toInt(json['reductionPercentage']),
+      label: (json['label'] ?? '').toString(),
     );
   }
 
@@ -181,12 +272,18 @@ class WeeklyProgress {
       'dailyCigarettes': dailyCigarettes,
       'weeklyGoal': weeklyGoal,
       'totalSmoked': totalSmoked,
+      'baselineExpected': baselineExpected,
+      'cigarettesAvoided': cigarettesAvoided,
+      'reductionPercentage': reductionPercentage,
+      'label': label,
     };
   }
 
   double get completionPercentage {
-    if (weeklyGoal == 0) return 0.0;
-    return (totalSmoked / weeklyGoal) * 100;
+    if (reductionPercentage > 0) return reductionPercentage.toDouble();
+    if (weeklyGoal <= 0) return 0.0;
+    final reduction = ((weeklyGoal - totalSmoked) / weeklyGoal) * 100;
+    return reduction.clamp(0.0, 100.0).toDouble();
   }
 }
 

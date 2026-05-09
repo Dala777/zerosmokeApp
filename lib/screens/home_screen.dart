@@ -17,7 +17,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  int cigarettesSmoked = 0;
   late AnimationController _controller;
   late Animation<double> _animation;
   
@@ -62,9 +61,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _logCigarette(SmokingRecord record) {
     HapticFeedback.mediumImpact();
-    setState(() {
-      cigarettesSmoked++;
-    });
     _controller.reset();
     _controller.forward();
     
@@ -268,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             final userProgress = progressProvider.userProgress;
             int daysWithoutSmoking = userProgress?.daysWithoutSmoking ?? 0;
             double moneySaved = userProgress?.moneySaved ?? 0.0;
-            double healthProgress = userProgress?.healthProgress ?? 0.0;
+            double planProgress = userProgress?.planProgress ?? userProgress?.healthProgress ?? 0.0;
             
             return Padding(
               padding: const EdgeInsets.only(bottom: 16.0), // Add bottom padding
@@ -340,7 +336,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       child: ProgressWidget(
                         daysWithoutSmoking: daysWithoutSmoking,
                         moneySaved: moneySaved,
-                        healthProgress: healthProgress,
+                        planProgress: planProgress,
+                        planCurrentDay: userProgress?.planCurrentDay ?? 0,
+                        planTotalDays: userProgress?.planTotalDays ?? 0,
                       ),
                     ),
                   ),
@@ -423,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   ),
                                   const SizedBox(width: 16),
                                   const Text(
-                                    "Cigarrillos registrados:",
+                                    "Cigarrillos de hoy:",
                                     style: TextStyle(
                                       color: AppColors.text,
                                       fontSize: 16,
@@ -449,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   ],
                                 ),
                                 child: Text(
-                                  "$cigarettesSmoked",
+                                  "${userProgress?.cigarettesSmokedToday ?? 0}",
                                   style: const TextStyle(
                                     color: AppColors.accent,
                                     fontSize: 24,

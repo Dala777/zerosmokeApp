@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user_progress.dart';
 import '../models/initial_test.dart';
 import '../models/daily_plan.dart';
+import '../models/daily_checkin.dart';
 import '../models/smoking_record.dart';
 import '../services/progress_service.dart';
 
@@ -10,6 +11,7 @@ class ProgressProvider extends ChangeNotifier {
   
   UserProgress? _userProgress;
   DailyPlan? _dailyPlan;
+  DailyCheckIn? _todayCheckIn;
   List<WeeklyProgress> _weeklyProgress = [];
   List<Achievement> _achievements = [];
   bool _isLoading = false;
@@ -21,6 +23,7 @@ class ProgressProvider extends ChangeNotifier {
   // Getters
   UserProgress? get userProgress => _userProgress;
   DailyPlan? get dailyPlan => _dailyPlan;
+  DailyCheckIn? get todayCheckIn => _todayCheckIn;
   List<WeeklyProgress> get weeklyProgress => _weeklyProgress;
   List<Achievement> get achievements => _achievements;
   bool get isLoading => _isLoading;
@@ -40,6 +43,7 @@ class ProgressProvider extends ChangeNotifier {
       }
       await getWeeklyProgress();
       await getAchievements();
+      await getTodayDailyCheckIn();
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -66,6 +70,10 @@ class ProgressProvider extends ChangeNotifier {
   // Cargar el plan diario
   Future<void> loadDailyPlan() async {
     await getDailyPlan();
+  }
+
+  Future<void> loadTodayDailyCheckIn() async {
+    await getTodayDailyCheckIn();
   }
 
   // Obtener el progreso del usuario
@@ -111,9 +119,16 @@ class ProgressProvider extends ChangeNotifier {
       
       if (response['success']) {
         if (response['data'] != null) {
-          _weeklyProgress = List<WeeklyProgress>.from(
-            response['data'].map((x) => WeeklyProgress.fromJson(x))
-          );
+          final data = response['data'];
+          if (data is List) {
+            _weeklyProgress = data
+                .map<WeeklyProgress>((x) => WeeklyProgress.fromJson(Map<String, dynamic>.from(x)))
+                .toList();
+          } else if (data is Map) {
+            _weeklyProgress = [WeeklyProgress.fromJson(Map<String, dynamic>.from(data))];
+          } else {
+            _weeklyProgress = [];
+          }
         }
       } else {
         _errorMessage = response['message'];
@@ -139,14 +154,17 @@ class ProgressProvider extends ChangeNotifier {
         if (response['data'] != null) {
           // Procesar los logros
           _achievements = [];
-          response['data'].forEach((key, value) {
+          final data = Map<String, dynamic>.from(response['data']);
+          data.forEach((key, value) {
+            if (value is! Map) return;
+            final achievement = Map<String, dynamic>.from(value);
             _achievements.add(Achievement(
               id: key,
-              title: value['title'] ?? '',
-              description: value['description'] ?? '',
-              date: value['date'] != null ? DateTime.parse(value['date']) : null,
-              isCompleted: value['completed'] ?? false,
-              progress: value['progress'] ?? 0.0,
+              title: achievement['title'] ?? '',
+              description: achievement['description'] ?? '',
+              date: achievement['date'] != null ? DateTime.tryParse(achievement['date']) : null,
+              isCompleted: achievement['completed'] ?? false,
+              progress: _toDouble(achievement['progress']),
             ));
           });
         }
@@ -155,6 +173,53 @@ class ProgressProvider extends ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> getTodayDailyCheckIn() async {
+    try {
+      final response = await _progressService.getTodayDailyCheckIn();
+      if (response['success'] && response['data'] != null) {
+        _todayCheckIn = DailyCheckIn.fromJson(Map<String, dynamic>.from(response['data']));
+      } else {
+        _todayCheckIn = null;
+      }
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<bool> saveDailyCheckIn(DailyCheckIn checkIn) async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    try {
+      final response = await _progressService.saveDailyCheckIn(checkIn);
+      if (response['success']) {
+        final data = response['data'];
+        if (data is Map && data['checkin'] != null) {
+          _todayCheckIn = DailyCheckIn.fromJson(Map<String, dynamic>.from(data['checkin']));
+        }
+        if (data is Map && data['progress'] != null) {
+          _userProgress = UserProgress.fromJson(Map<String, dynamic>.from(data['progress']));
+        } else {
+          await getUserProgress();
+        }
+        await getWeeklyProgress();
+        await getAchievements();
+        return true;
+      }
+      _errorMessage = response['message'];
+      return false;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -220,6 +285,11 @@ class ProgressProvider extends ChangeNotifier {
       
       if (response['success']) {
         _dailyPlan = DailyPlan.fromJson(response['data']);
+        final data = response['data'];
+        if (data is Map && data['progress'] != null) {
+          _userProgress = UserProgress.fromJson(Map<String, dynamic>.from(data['progress']));
+        }
+        await getAchievements();
         return true;
       } else {
         _errorMessage = response['message'];
@@ -247,6 +317,8 @@ class ProgressProvider extends ChangeNotifier {
         // Actualizar el progreso del usuario después de registrar un cigarrillo
         await getUserProgress();
         await getWeeklyProgress();
+        await getAchievements();
+        await getTodayDailyCheckIn();
         return true;
       } else {
         _errorMessage = response['message'];
@@ -284,5 +356,11 @@ class ProgressProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  double _toDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0.0;
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'progress_screen.dart';
@@ -76,14 +75,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted || _showingCheckInModal) return;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final lastCheckInDate = prefs.getString('lastCheckInDate');
+      final progressProvider = Provider.of<ProgressProvider>(context, listen: false);
+      await progressProvider.getTodayDailyCheckIn();
 
-      final today = DateTime.now();
-      final todayString =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-
-      if (lastCheckInDate != todayString) {
+      if (progressProvider.todayCheckIn == null) {
         if (mounted && !_showingCheckInModal) {
           setState(() => _showingCheckInModal = true);
 
@@ -113,12 +108,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final todayString =
-          '${checkIn.date.year}-${checkIn.date.month.toString().padLeft(2, '0')}-${checkIn.date.day.toString().padLeft(2, '0')}';
-
-      await prefs.setString('lastCheckInDate', todayString);
-      await prefs.setString('lastCheckInData', checkIn.toJson().toString());
+      final progressProvider = Provider.of<ProgressProvider>(context, listen: false);
+      final success = await progressProvider.saveDailyCheckIn(checkIn);
+      if (!success) {
+        throw Exception(progressProvider.errorMessage);
+      }
 
       if (mounted) {
         setState(() => _showingCheckInModal = false);
