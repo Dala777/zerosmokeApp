@@ -12,6 +12,7 @@ class UserProgress {
   final int planCurrentDay;
   final int planTotalDays;
   final double planProgress;
+  final DateTime? planStartDate;
   final int motivationPoints;
   final List<Map<String, dynamic>> emotionStats;
   final List<Map<String, dynamic>> symptomStats;
@@ -53,6 +54,7 @@ class UserProgress {
     this.planCurrentDay = 0,
     this.planTotalDays = 0,
     this.planProgress = 0.0,
+    this.planStartDate,
     this.motivationPoints = 0,
     this.emotionStats = const [],
     this.symptomStats = const [],
@@ -83,6 +85,9 @@ class UserProgress {
       planCurrentDay: _toInt(json['planCurrentDay']),
       planTotalDays: _toInt(json['planTotalDays']),
       planProgress: _toDouble(json['planProgress']),
+      planStartDate: json['planStartDate'] != null
+          ? DateTime.tryParse(json['planStartDate'].toString())
+          : null,
       motivationPoints: _toInt(json['motivationPoints']),
       emotionStats: _mapList(json['emotionStats']),
       symptomStats: _mapList(json['symptomStats']),
@@ -116,6 +121,7 @@ class UserProgress {
       'planCurrentDay': planCurrentDay,
       'planTotalDays': planTotalDays,
       'planProgress': planProgress,
+      'planStartDate': planStartDate?.toIso8601String(),
       'motivationPoints': motivationPoints,
       'emotionStats': emotionStats,
       'symptomStats': symptomStats,
@@ -142,6 +148,7 @@ class UserProgress {
     int? planCurrentDay,
     int? planTotalDays,
     double? planProgress,
+    DateTime? planStartDate,
     int? motivationPoints,
     List<Map<String, dynamic>>? emotionStats,
     List<Map<String, dynamic>>? symptomStats,
@@ -166,6 +173,7 @@ class UserProgress {
       planCurrentDay: planCurrentDay ?? this.planCurrentDay,
       planTotalDays: planTotalDays ?? this.planTotalDays,
       planProgress: planProgress ?? this.planProgress,
+      planStartDate: planStartDate ?? this.planStartDate,
       motivationPoints: motivationPoints ?? this.motivationPoints,
       emotionStats: emotionStats ?? this.emotionStats,
       symptomStats: symptomStats ?? this.symptomStats,

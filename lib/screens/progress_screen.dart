@@ -258,7 +258,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
   }
 
   Widget _buildProgressSummary(UserProgress userProgress) {
-    final reductionPercentage = userProgress.reductionPercentage.clamp(0, 100).toInt();
+    final weeklyReduction = userProgress.weeklyData.isNotEmpty
+        ? userProgress.weeklyData.first.completionPercentage
+        : userProgress.reductionPercentage;
+    final reductionPercentage = weeklyReduction.clamp(0, 100).toInt();
     
     return Container(
       padding: const EdgeInsets.all(24),

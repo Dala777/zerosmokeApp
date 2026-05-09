@@ -380,7 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 _buildInfoItem(
                   icon: Icons.calendar_today_outlined,
                   title: "Miembro desde",
-                  value: _formatDate(user?.createdAt),
+                  value: _formatDate(userProgress?.planStartDate ?? user?.createdAt ?? DateTime.now()),
                 ),
                 Container(
                   width: 1,

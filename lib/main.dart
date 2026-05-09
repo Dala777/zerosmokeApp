@@ -6,7 +6,6 @@ import 'providers/auth_provider.dart';
 import 'providers/progress_provider.dart';
 import 'services/api_service.dart';
 import 'services/progress_service.dart';
-import 'widgets/chatbot_widget.dart';
 
 void main() {
   // Asegurarse de que las dependencias de Flutter estén inicializadas
@@ -47,14 +46,6 @@ class ZeroSmokeApp extends StatelessWidget {
         ),
       ),
       home: const SplashScreen(),
-      builder: (context, child) {
-        return Stack(
-          children: [
-            if (child != null) child,
-            const ChatbotWidget(),
-          ],
-        );
-      },
     );
   }
 }

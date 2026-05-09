@@ -5,6 +5,7 @@ import 'profile_screen.dart';
 import 'progress_screen.dart';
 import 'initial_test_screen.dart';
 import 'gamification_screen.dart';
+import 'chat_screen.dart';
 import '../theme/app_colors.dart';
 import '../providers/progress_provider.dart';
 import '../models/daily_checkin.dart';
@@ -29,6 +30,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const PlanScreen(),
     const ProgressScreen(),
     const GamificationScreen(),
+    const ChatScreen(),
     const ProfileScreen(),
   ];
 
@@ -240,6 +242,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 icon: Icon(Icons.emoji_events_outlined),
                 activeIcon: Icon(Icons.emoji_events),
                 label: 'Logros',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.chat_bubble_outline),
+                activeIcon: Icon(Icons.chat_bubble),
+                label: 'Chat',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),

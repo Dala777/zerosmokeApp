@@ -193,7 +193,7 @@ class ApiService {
     return token != null;
   }
 
-  // Enviar mensaje al chatbot backend + Gemini
+  // Enviar mensaje al chatbot backend + Groq
   static Future<Map<String, dynamic>> sendChatMessage(String message, {List<Map<String, dynamic>>? history}) async {
     try {
       final response = await http.post(
@@ -209,7 +209,8 @@ class ApiService {
         final responseData = jsonDecode(response.body);
         return {
           'success': true,
-          'response': responseData['response'] ?? responseData['text'] ?? '',
+          'reply': responseData['reply'] ?? responseData['response'] ?? responseData['text'] ?? '',
+          'response': responseData['reply'] ?? responseData['response'] ?? responseData['text'] ?? '',
           'meta': responseData,
         };
       } else {
