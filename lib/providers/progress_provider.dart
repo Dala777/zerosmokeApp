@@ -30,6 +30,18 @@ class ProgressProvider extends ChangeNotifier {
   String get errorMessage => _errorMessage;
   bool get needsInitialTest => _needsInitialTest;
 
+  void clear() {
+    _userProgress = null;
+    _dailyPlan = null;
+    _todayCheckIn = null;
+    _weeklyProgress = [];
+    _achievements = [];
+    _isLoading = false;
+    _errorMessage = '';
+    _needsInitialTest = false;
+    notifyListeners();
+  }
+
   // Inicializar el provider
   Future<void> initialize() async {
     _isLoading = true;

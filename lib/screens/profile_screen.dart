@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../providers/auth_provider.dart';
+import '../providers/progress_provider.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -34,6 +38,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     'profileImage': null,
   };
 
+  String _formatDate(DateTime? date) {
+    if (date == null) return "Sin fecha";
+    return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+  }
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +68,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     ));
     
     _animationController.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ProgressProvider>(context, listen: false).loadUserProgress();
+      Provider.of<ProgressProvider>(context, listen: false).loadAchievements();
+    });
   }
 
   @override
@@ -216,7 +229,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
   
   Widget _buildProfileInfo() {
-    final initials = _userData['name']
+    final auth = Provider.of<AuthProvider>(context);
+    final progress = Provider.of<ProgressProvider>(context);
+    final user = auth.user;
+    final userProgress = progress.userProgress;
+    final name = user?.name ?? _userData['name'];
+    final email = user?.email ?? _userData['email'];
+    final achievements = progress.achievements.where((achievement) => achievement.isCompleted).length;
+    final initials = name
         .split(' ')
         .map((name) => name[0])
         .take(2)
@@ -286,7 +306,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _userData['name'],
+                      name,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -296,7 +316,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _userData['email'],
+                      email,
                       style: TextStyle(
                         fontSize: 15,
                         color: AppColors.textSecondary,
@@ -331,7 +351,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            "Nivel: ${_userData['dependencyLevel']}",
+                            "Nivel: ${userProgress?.dependencyLevel ?? _userData['dependencyLevel']}",
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -360,7 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 _buildInfoItem(
                   icon: Icons.calendar_today_outlined,
                   title: "Miembro desde",
-                  value: _userData['joinDate'],
+                  value: _formatDate(user?.createdAt),
                 ),
                 Container(
                   width: 1,
@@ -370,7 +390,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 _buildInfoItem(
                   icon: Icons.emoji_events_outlined,
                   title: "Logros",
-                  value: "${_userData['achievements']}",
+                  value: "$achievements / ${userProgress?.motivationPoints ?? 0} pts",
                 ),
                 Container(
                   width: 1,
@@ -380,7 +400,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 _buildInfoItem(
                   icon: Icons.local_fire_department_outlined,
                   title: "Racha",
-                  value: "${_userData['streak']} días",
+                  value: "${userProgress?.bestStreak ?? _userData['streak']} días",
                 ),
               ],
             ),
@@ -434,6 +454,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
   
   Widget _buildStatisticsSection() {
+    final userProgress = Provider.of<ProgressProvider>(context).userProgress;
+    final int daysWithoutSmoking = userProgress?.daysWithoutSmoking ?? (_userData['daysWithoutSmoking'] as int);
+    final int cigarettesAvoided = userProgress?.cigarettesAvoided ?? (_userData['cigarettesAvoided'] as int);
+    final double moneySaved = userProgress?.moneySaved ?? (_userData['moneySaved'] as double);
+    final planProgress = userProgress?.planProgress ?? 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -468,24 +494,24 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             Expanded(
               child: _buildStatCard(
                 title: "Días sin fumar",
-                value: "${_userData['daysWithoutSmoking']}",
+                value: "$daysWithoutSmoking",
                 icon: Icons.smoke_free,
                 gradient: AppColors.gradientSuccess,
-                progress: _userData['daysWithoutSmoking'] / 30,
+                progress: daysWithoutSmoking / 30,
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: _buildStatCard(
                 title: "Cigarrillos evitados",
-                value: "${_userData['cigarettesAvoided']}",
+                value: "$cigarettesAvoided",
                 icon: FontAwesomeIcons.ban,
                 gradient: LinearGradient(
                   colors: [AppColors.warning, AppColors.error],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                progress: _userData['cigarettesAvoided'] / 200,
+                progress: cigarettesAvoided / 200,
               ),
             ),
           ],
@@ -493,14 +519,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         const SizedBox(height: 16),
         _buildStatCard(
           title: "Dinero ahorrado",
-          value: "\$${_userData['moneySaved'].toStringAsFixed(2)}",
+          value: "\$${moneySaved.toStringAsFixed(2)}",
           icon: Icons.savings_outlined,
           gradient: LinearGradient(
             colors: [AppColors.warning, AppColors.success],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          progress: _userData['moneySaved'] / 100,
+          progress: planProgress > 0 ? planProgress : moneySaved / 100,
           isWide: true,
         ),
       ],
@@ -991,8 +1017,15 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
+              Provider.of<ProgressProvider>(context, listen: false).clear();
+              await Provider.of<AuthProvider>(context, listen: false).logout();
+              if (!mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
