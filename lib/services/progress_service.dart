@@ -131,11 +131,16 @@ class ProgressService {
       );
 
       final responseData = jsonDecode(response.body);
+      print('[daily-checkin/today] status=${response.statusCode} body=${response.body}');
 
       return {
         'success': response.statusCode == 200,
         'message': responseData['message'] ?? 'Unknown error',
-        'data': responseData['data'],
+        'hasCheckin': responseData['hasCheckin'] == true || responseData['checkin'] != null || responseData['data'] != null,
+        'checkin': responseData['checkin'] ?? responseData['data'],
+        'data': responseData['checkin'] ?? responseData['data'],
+        'dateKey': responseData['dateKey'],
+        'timezoneOffsetMinutes': responseData['timezoneOffsetMinutes'],
       };
     } catch (e) {
       return {
@@ -155,10 +160,13 @@ class ProgressService {
       );
 
       final responseData = jsonDecode(response.body);
+      print('[daily-checkin/save] status=${response.statusCode} body=${response.body}');
 
       return {
         'success': response.statusCode == 200 || response.statusCode == 201,
         'message': responseData['message'] ?? 'Unknown error',
+        'hasCheckin': responseData['hasCheckin'] == true,
+        'checkin': responseData['checkin'],
         'data': responseData['data'],
       };
     } catch (e) {

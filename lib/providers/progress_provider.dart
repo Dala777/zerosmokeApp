@@ -29,6 +29,7 @@ class ProgressProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   bool get needsInitialTest => _needsInitialTest;
+  bool get hasCompletedTodayCheckIn => _todayCheckIn != null && _todayCheckIn!.isToday();
 
   void clear() {
     _userProgress = null;
@@ -194,11 +195,14 @@ class ProgressProvider extends ChangeNotifier {
   Future<void> getTodayDailyCheckIn() async {
     try {
       final response = await _progressService.getTodayDailyCheckIn();
-      if (response['success'] && response['data'] != null) {
-        _todayCheckIn = DailyCheckIn.fromJson(Map<String, dynamic>.from(response['data']));
+      print('[ProgressProvider] daily-checkin/today response=$response');
+      if (response['success'] == true && response['hasCheckin'] == true && response['data'] != null) {
+        final checkIn = DailyCheckIn.fromJson(Map<String, dynamic>.from(response['data']));
+        _todayCheckIn = checkIn.isToday() ? checkIn : null;
       } else {
         _todayCheckIn = null;
       }
+      print('[ProgressProvider] hasCompletedTodayCheckIn=$hasCompletedTodayCheckIn id=${_todayCheckIn?.id}');
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
@@ -215,8 +219,9 @@ class ProgressProvider extends ChangeNotifier {
       final response = await _progressService.saveDailyCheckIn(checkIn);
       if (response['success']) {
         final data = response['data'];
-        if (data is Map && data['checkin'] != null) {
-          _todayCheckIn = DailyCheckIn.fromJson(Map<String, dynamic>.from(data['checkin']));
+        final savedCheckin = response['checkin'] ?? (data is Map ? data['checkin'] : null);
+        if (savedCheckin != null) {
+          _todayCheckIn = DailyCheckIn.fromJson(Map<String, dynamic>.from(savedCheckin));
         }
         if (data is Map && data['progress'] != null) {
           _userProgress = UserProgress.fromJson(Map<String, dynamic>.from(data['progress']));

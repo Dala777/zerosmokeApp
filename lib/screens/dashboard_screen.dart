@@ -79,8 +79,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final progressProvider = Provider.of<ProgressProvider>(context, listen: false);
       await progressProvider.getTodayDailyCheckIn();
+      print('[Dashboard] hasCompletedTodayCheckIn=${progressProvider.hasCompletedTodayCheckIn} checkInId=${progressProvider.todayCheckIn?.id}');
 
-      if (progressProvider.todayCheckIn == null) {
+      if (!progressProvider.hasCompletedTodayCheckIn) {
         if (mounted && !_showingCheckInModal) {
           setState(() => _showingCheckInModal = true);
 

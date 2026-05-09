@@ -169,44 +169,51 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildComposer() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        border: Border(top: BorderSide(color: Colors.black.withOpacity(0.06))),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              minLines: 1,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Escribe tu mensaje...',
-                filled: true,
-                fillColor: AppColors.background,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          border: Border(top: BorderSide(color: Colors.black.withOpacity(0.06))),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                minLines: 1,
+                maxLines: 4,
+                textInputAction: TextInputAction.send,
+                decoration: InputDecoration(
+                  hintText: 'Escribe tu mensaje...',
+                  filled: true,
+                  fillColor: AppColors.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                onSubmitted: (_) => _sendMessage(),
               ),
-              onSubmitted: (_) => _sendMessage(),
             ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: _isSending ? AppColors.textSecondary : AppColors.primary,
-              borderRadius: BorderRadius.circular(14),
+            const SizedBox(width: 10),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: _isSending ? AppColors.textSecondary : AppColors.primary,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: IconButton(
+                onPressed: _isSending ? null : () => _sendMessage(),
+                icon: const Icon(Icons.send, color: Colors.white),
+              ),
             ),
-            child: IconButton(
-              onPressed: _isSending ? null : () => _sendMessage(),
-              icon: const Icon(Icons.send, color: Colors.white),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -242,11 +249,28 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildTyping() {
-    return const Align(
+    return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: EdgeInsets.only(left: 8, bottom: 12),
-        child: Text('ZeroSmoke esta pensando...', style: TextStyle(color: AppColors.textSecondary)),
+        padding: const EdgeInsets.only(left: 4, bottom: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Text(
+            'ZeroSmoke esta escribiendo...',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+        ),
       ),
     );
   }

@@ -214,9 +214,18 @@ class ApiService {
           'meta': responseData,
         };
       } else {
-        final responseData = response.body.isNotEmpty
-            ? jsonDecode(response.body)
-            : {'message': 'Error desconocido de chat'};
+        Map<String, dynamic> responseData = {
+          'message': 'El asistente no está disponible en este momento',
+        };
+        try {
+          if (response.body.isNotEmpty) {
+            responseData = Map<String, dynamic>.from(jsonDecode(response.body));
+          }
+        } catch (_) {
+          responseData = {
+            'message': 'El asistente no está disponible en este momento',
+          };
+        }
         return {
           'success': false,
           'message': responseData['message'] ?? 'Error desconocido de chat',
