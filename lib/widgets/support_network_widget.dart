@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_colors.dart';
 import '../models/support_contact.dart';
+import '../providers/gamification_provider.dart';
 
 class SupportNetworkWidget extends StatefulWidget {
-  final List<SupportContact> contacts;
-  final Function(SupportContact) onAddContact;
-  
-  const SupportNetworkWidget({
-    Key? key,
-    required this.contacts,
-    required this.onAddContact,
-  }) : super(key: key);
+  const SupportNetworkWidget({Key? key}) : super(key: key);
 
   @override
   _SupportNetworkWidgetState createState() => _SupportNetworkWidgetState();
@@ -32,6 +27,9 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
     _nameController = TextEditingController();
     _phoneController = TextEditingController();
     _emailController = TextEditingController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<GamificationProvider>(context, listen: false).loadSupportContacts();
+    });
   }
 
   @override
@@ -55,31 +53,57 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
     }
 
     final newContact = SupportContact(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: 'user1',
+      id: '',
+      userId: '',
       name: _nameController.text,
       relationship: _selectedRelationship,
-      phoneNumber: _phoneController.text,
+      phone: _phoneController.text,
       email: _emailController.text.isNotEmpty ? _emailController.text : null,
-      isEmergencyContact: _isEmergency,
-      createdAt: DateTime.now(),
+      isEmergency: _isEmergency,
     );
 
-    widget.onAddContact(newContact);
-
-    _nameController.clear();
-    _phoneController.clear();
-    _emailController.clear();
-    setState(() {
-      _selectedRelationship = 'amigo';
-      _isEmergency = false;
+    Provider.of<GamificationProvider>(context, listen: false)
+        .saveSupportContact(newContact)
+        .then((ok) {
+      if (ok && mounted) {
+        _nameController.clear();
+        _phoneController.clear();
+        _emailController.clear();
+        setState(() {
+          _selectedRelationship = 'amigo';
+          _isEmergency = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Contacto agregado a tu red de apoyo'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     });
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Contacto agregado a tu red de apoyo'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
+  void _deleteContact(String id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar contacto'),
+        content: const Text('¿Estás seguro de eliminar este contacto?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Provider.of<GamificationProvider>(context, listen: false)
+                  .deleteSupportContact(id);
+            },
+            child: const Text('Eliminar', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
       ),
     );
   }
@@ -96,15 +120,16 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final emergencyContacts = widget.contacts.where((c) => c.isEmergencyContact).toList();
-    final supportContacts = widget.contacts.where((c) => !c.isEmergencyContact).toList();
+    final provider = Provider.of<GamificationProvider>(context);
+    final contacts = provider.supportContacts;
+    final emergencyContacts = contacts.where((c) => c.isEmergency).toList();
+    final supportContacts = contacts.where((c) => !c.isEmergency).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Botón de emergencia destacado
           if (emergencyContacts.isNotEmpty)
             Container(
               width: double.infinity,
@@ -142,7 +167,7 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
                     children: emergencyContacts.take(3).map((contact) {
                       return Expanded(
                         child: GestureDetector(
-                          onTap: () => _callContact(contact.phoneNumber),
+                          onTap: () => _callContact(contact.phone),
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
@@ -151,11 +176,7 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
                             ),
                             child: Column(
                               children: [
-                                const Icon(
-                                  Icons.phone,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
+                                const Icon(Icons.phone, color: Colors.white, size: 20),
                                 const SizedBox(height: 4),
                                 Text(
                                   contact.name,
@@ -211,7 +232,6 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
             ),
           const SizedBox(height: 24),
 
-          // Formulario para agregar contacto
           const Text(
             'Agregar nuevo contacto',
             style: TextStyle(
@@ -409,7 +429,6 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
           ),
           const SizedBox(height: 24),
 
-          // Lista de contactos de apoyo
           if (supportContacts.isNotEmpty) ...[
             const Text(
               'Red de Apoyo',
@@ -424,7 +443,7 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
               return _buildContactCard(contact, false);
             }).toList(),
           ],
-          if (widget.contacts.isEmpty)
+          if (contacts.isEmpty)
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -527,6 +546,12 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
                     ),
                   ),
                 ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+                onPressed: () => _deleteContact(contact.id),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -534,7 +559,7 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _callContact(contact.phoneNumber),
+                  onTap: () => _callContact(contact.phone),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -551,7 +576,7 @@ class _SupportNetworkWidgetState extends State<SupportNetworkWidget> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          contact.phoneNumber,
+                          contact.phone,
                           style: const TextStyle(
                             color: AppColors.success,
                             fontSize: 12,

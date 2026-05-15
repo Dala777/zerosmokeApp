@@ -2,11 +2,10 @@ class SupportContact {
   final String id;
   final String userId;
   final String name;
-  final String relationship; // 'familia', 'amigo', 'profesional', 'otro'
-  final String phoneNumber;
+  final String relationship;
+  final String phone;
   final String? email;
-  final String? role; // 'emergencia', 'soporte', 'ambas'
-  final bool isEmergencyContact;
+  final bool isEmergency;
   final DateTime? createdAt;
 
   SupportContact({
@@ -14,40 +13,36 @@ class SupportContact {
     required this.userId,
     required this.name,
     required this.relationship,
-    required this.phoneNumber,
+    required this.phone,
     this.email,
-    this.role,
-    this.isEmergencyContact = false,
+    this.isEmergency = false,
     this.createdAt,
   });
 
   factory SupportContact.fromJson(Map<String, dynamic> json) {
     return SupportContact(
       id: json['_id'] ?? '',
-      userId: json['userId'] ?? '',
+      userId: json['userId'] is Map
+          ? (json['userId'] as Map)['_id']?.toString() ?? ''
+          : json['userId']?.toString() ?? '',
       name: json['name'] ?? '',
       relationship: json['relationship'] ?? 'otro',
-      phoneNumber: json['phoneNumber'] ?? '',
+      phone: json['phone'] ?? json['phoneNumber'] ?? '',
       email: json['email'],
-      role: json['role'],
-      isEmergencyContact: json['isEmergencyContact'] ?? false,
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+      isEmergency: json['isEmergency'] ?? false,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
           : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'userId': userId,
       'name': name,
       'relationship': relationship,
-      'phoneNumber': phoneNumber,
+      'phone': phone,
       'email': email,
-      'role': role,
-      'isEmergencyContact': isEmergencyContact,
-      'createdAt': createdAt?.toIso8601String(),
+      'isEmergency': isEmergency,
     };
   }
 }

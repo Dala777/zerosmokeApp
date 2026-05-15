@@ -2,48 +2,53 @@ class EmotionalEntry {
   final String id;
   final String userId;
   final DateTime date;
-  final String mood; // 'excelente', 'bueno', 'neutro', 'triste', 'ansioso'
-  final int intensity; // 1-10
-  final String? triggers; // Lo que causó el sentimiento
-  final String? notes; // Notas adicionales
-  final String? copingStrategy; // Estrategia usada
+  final String mood;
+  final int intensity;
+  final String? triggers;
+  final String? notes;
+  final List<String> tags;
+  final DateTime? createdAt;
 
   EmotionalEntry({
     required this.id,
     required this.userId,
     required this.date,
     required this.mood,
-    required this.intensity,
+    this.intensity = 5,
     this.triggers,
     this.notes,
-    this.copingStrategy,
+    this.tags = const [],
+    this.createdAt,
   });
 
   factory EmotionalEntry.fromJson(Map<String, dynamic> json) {
     return EmotionalEntry(
       id: json['_id'] ?? '',
-      userId: json['userId'] ?? '',
-      date: json['date'] != null 
-          ? DateTime.parse(json['date']) 
+      userId: json['userId'] is Map
+          ? (json['userId'] as Map)['_id']?.toString() ?? ''
+          : json['userId']?.toString() ?? '',
+      date: json['date'] != null
+          ? DateTime.parse(json['date'])
           : DateTime.now(),
       mood: json['mood'] ?? 'neutro',
       intensity: json['intensity'] ?? 5,
       triggers: json['triggers'],
-      notes: json['notes'],
-      copingStrategy: json['copingStrategy'],
+      notes: json['notes'] ?? json['note'],
+      tags: List<String>.from(json['tags'] ?? []),
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'userId': userId,
       'date': date.toIso8601String(),
       'mood': mood,
       'intensity': intensity,
       'triggers': triggers,
       'notes': notes,
-      'copingStrategy': copingStrategy,
+      'tags': tags,
     };
   }
 }

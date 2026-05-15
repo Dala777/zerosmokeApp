@@ -4,8 +4,12 @@ import 'theme/app_colors.dart';
 import 'screens/splash_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/progress_provider.dart';
+import 'providers/gamification_provider.dart';
+import 'providers/notification_provider.dart';
 import 'services/api_service.dart';
 import 'services/progress_service.dart';
+import 'services/gamification_service.dart';
+import 'services/notification_service.dart';
 
 void main() {
   // Asegurarse de que las dependencias de Flutter estén inicializadas
@@ -14,12 +18,16 @@ void main() {
   // Crear instancias de servicios
   final apiService = ApiService();
   final progressService = ProgressService(apiService);
+  final gamificationService = GamificationService();
+  final notificationService = NotificationService();
   
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProgressProvider(progressService)),
+        ChangeNotifierProvider(create: (_) => GamificationProvider(gamificationService)),
+        ChangeNotifierProvider(create: (_) => NotificationProvider(notificationService)),
       ],
       child: const ZeroSmokeApp(),
     ),

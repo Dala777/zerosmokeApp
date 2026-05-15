@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../models/smoking_record.dart';
 import '../models/user_progress.dart';
+import '../models/dynamic_achievement.dart';
 import '../providers/progress_provider.dart';
+import '../providers/gamification_provider.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -22,6 +24,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final progressProvider = Provider.of<ProgressProvider>(context, listen: false);
       progressProvider.initialize();
+      Provider.of<GamificationProvider>(context, listen: false).loadDynamicAchievements();
     });
   }
 
@@ -555,9 +558,19 @@ class _ProgressScreenState extends State<ProgressScreen> {
   }
 
   Widget _buildAchievements(ProgressProvider provider) {
-    final achievements = provider.achievements;
-    final completedAchievements = achievements.where((a) => a.isCompleted).toList();
-    final pendingAchievements = achievements.where((a) => !a.isCompleted).toList();
+    final gamification = Provider.of<GamificationProvider>(context);
+    final achievements = gamification.dynamicAchievements;
+    final totalCount = achievements.length;
+
+    final sorted = List<DynamicAchievement>.from(achievements)
+      ..sort((a, b) {
+        if (a.unlocked && !b.unlocked) return -1;
+        if (!a.unlocked && b.unlocked) return 1;
+        return b.progressPercentage.compareTo(a.progressPercentage);
+      });
+
+    final displayList = sorted.take(3).toList();
+    final unlockedCount = achievements.where((a) => a.unlocked).length;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -589,7 +602,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  "${completedAchievements.length}/${achievements.length}",
+                  "$unlockedCount/$totalCount",
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -608,28 +621,90 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 color: AppColors.textSecondary,
                 fontSize: 14,
               ),
+            )
+          else
+            ...displayList.map((a) => _buildDynamicAchievementItem(a)).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDynamicAchievementItem(DynamicAchievement a) {
+    final color = Color(int.parse(a.color.replaceAll('#', 'FF'), radix: 16));
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: a.unlocked
+                  ? color.withOpacity(0.15)
+                  : AppColors.tertiary.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: a.unlocked ? color.withOpacity(0.3) : AppColors.tertiary,
+                width: 1,
+              ),
             ),
-          
-          // Logros completados
-          ...completedAchievements.map((achievement) => _buildAchievementItem(
-            icon: Icons.emoji_events,
-            color: AppColors.warning,
-            title: achievement.title,
-            subtitle: achievement.date != null 
-                ? "Logrado el ${achievement.date!.day} de ${_getMonthName(achievement.date!.month)}"
-                : "Logrado",
-            isCompleted: true,
-          )).toList(),
-          
-          // Logros pendientes
-          ...pendingAchievements.take(2).map((achievement) => _buildAchievementItem(
-            icon: Icons.emoji_events,
-            color: AppColors.textSecondary,
-            title: achievement.title,
-            subtitle: "En progreso (${(achievement.progress * 100).toInt()}%)",
-            isCompleted: false,
-            progress: achievement.progress,
-          )).toList(),
+            child: Icon(
+              Icons.emoji_events,
+              color: a.unlocked ? color : AppColors.textSecondary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  a.title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: a.unlocked
+                        ? AppColors.text
+                        : AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  a.unlocked
+                      ? "Completado"
+                      : "En progreso (${a.progressPercentage}%)",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (!a.unlocked) ...[
+                  const SizedBox(height: 8),
+                  LinearPercentIndicator(
+                    lineHeight: 6.0,
+                    percent: a.progress.clamp(0.0, 1.0),
+                    backgroundColor: AppColors.tertiary.withOpacity(0.5),
+                    progressColor: color,
+                    barRadius: const Radius.circular(10),
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (a.unlocked)
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.check,
+                color: AppColors.success,
+                size: 16,
+              ),
+            ),
         ],
       ),
     );

@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../models/emotional_entry.dart';
+import '../providers/gamification_provider.dart';
 
 class EmotionalDiaryWidget extends StatefulWidget {
-  final List<EmotionalEntry> entries;
-  final Function(EmotionalEntry) onAddEntry;
-  
-  const EmotionalDiaryWidget({
-    Key? key,
-    required this.entries,
-    required this.onAddEntry,
-  }) : super(key: key);
+  const EmotionalDiaryWidget({Key? key}) : super(key: key);
 
   @override
   _EmotionalDiaryWidgetState createState() => _EmotionalDiaryWidgetState();
@@ -21,16 +16,16 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
   late TextEditingController _triggersController;
   String _selectedMood = 'neutro';
   int _selectedIntensity = 5;
-  
+
   final Map<String, Map<String, dynamic>> _moodData = {
     'excelente': {
       'icon': Icons.sentiment_very_satisfied,
-      'color': Color(0xFF6DC9A1),
+      'color': const Color(0xFF6DC9A1),
       'label': 'Excelente'
     },
     'bueno': {
       'icon': Icons.sentiment_satisfied,
-      'color': Color(0xFF9DC183),
+      'color': const Color(0xFF9DC183),
       'label': 'Bueno'
     },
     'neutro': {
@@ -40,12 +35,12 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
     },
     'triste': {
       'icon': Icons.sentiment_dissatisfied,
-      'color': Color(0xFFF6C667),
+      'color': const Color(0xFFF6C667),
       'label': 'Triste'
     },
     'ansioso': {
       'icon': Icons.sentiment_very_dissatisfied,
-      'color': Color(0xFFF08A84),
+      'color': const Color(0xFFF08A84),
       'label': 'Ansioso'
     },
   };
@@ -55,6 +50,9 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
     super.initState();
     _notesController = TextEditingController();
     _triggersController = TextEditingController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<GamificationProvider>(context, listen: false).loadEmotionalEntries();
+    });
   }
 
   @override
@@ -77,8 +75,8 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
     }
 
     final newEntry = EmotionalEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: 'user1',
+      id: '',
+      userId: '',
       date: DateTime.now(),
       mood: _selectedMood,
       intensity: _selectedIntensity,
@@ -86,32 +84,34 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
       notes: _notesController.text,
     );
 
-    widget.onAddEntry(newEntry);
-    
-    _notesController.clear();
-    _triggersController.clear();
-    setState(() {
-      _selectedMood = 'neutro';
-      _selectedIntensity = 5;
+    Provider.of<GamificationProvider>(context, listen: false).saveEmotionalEntry(newEntry).then((ok) {
+      if (ok && mounted) {
+        _notesController.clear();
+        _triggersController.clear();
+        setState(() {
+          _selectedMood = 'neutro';
+          _selectedIntensity = 5;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Entrada guardada en tu diario emocional'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Entrada guardada en tu diario emocional'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final entries = Provider.of<GamificationProvider>(context).emotionalEntries;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Formulario para nueva entrada
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -133,8 +133,6 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                
-                // Selector de emociones
                 const Text(
                   '¿Cómo te sientes hoy?',
                   style: TextStyle(
@@ -149,7 +147,7 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
                     final mood = entry.key;
                     final data = entry.value;
                     final isSelected = _selectedMood == mood;
-                    
+
                     return GestureDetector(
                       onTap: () {
                         setState(() {
@@ -176,8 +174,6 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
                   }).toList(),
                 ),
                 const SizedBox(height: 16),
-                
-                // Intensidad del sentimiento
                 const Text(
                   'Intensidad (1-10)',
                   style: TextStyle(
@@ -220,8 +216,6 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
-                // Disparadores (triggers)
                 TextField(
                   controller: _triggersController,
                   decoration: InputDecoration(
@@ -247,8 +241,6 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
                   style: const TextStyle(color: AppColors.text),
                 ),
                 const SizedBox(height: 12),
-                
-                // Notas
                 TextField(
                   controller: _notesController,
                   decoration: InputDecoration(
@@ -274,8 +266,6 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
                   style: const TextStyle(color: AppColors.text),
                 ),
                 const SizedBox(height: 16),
-                
-                // Botón de guardar
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -300,8 +290,6 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
             ),
           ),
           const SizedBox(height: 24),
-          
-          // Historial de entradas
           const Text(
             'Mis entradas recientes',
             style: TextStyle(
@@ -311,8 +299,8 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
             ),
           ),
           const SizedBox(height: 12),
-          
-          if (widget.entries.isEmpty)
+
+          if (entries.isEmpty)
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -336,8 +324,8 @@ class _EmotionalDiaryWidgetState extends State<EmotionalDiaryWidget> {
               ),
             )
           else
-            ...widget.entries.map((entry) {
-              final moodData = _moodData[entry.mood]!;
+            ...entries.map((entry) {
+              final moodData = _moodData[entry.mood] ?? _moodData['neutro']!;
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(12),

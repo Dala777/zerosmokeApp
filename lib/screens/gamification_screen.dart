@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../models/user_progress.dart';
+import '../models/dynamic_achievement.dart';
+import '../models/reward_item.dart';
 import '../providers/progress_provider.dart';
+import '../providers/gamification_provider.dart';
 import '../theme/app_colors.dart';
-import '../models/emotional_entry.dart';
-import '../models/support_contact.dart';
 import '../widgets/emotional_diary_widget.dart';
 import '../widgets/support_network_widget.dart';
 
@@ -16,71 +15,18 @@ class GamificationScreen extends StatefulWidget {
   _GamificationScreenState createState() => _GamificationScreenState();
 }
 
-class _GamificationScreenState extends State<GamificationScreen> with SingleTickerProviderStateMixin {
+class _GamificationScreenState extends State<GamificationScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  int _motivationPoints = 350; // Puntos de motivación del usuario
-  
-  // Lista de recompensas
-  final List<Map<String, dynamic>> _rewards = [
-    {
-      'id': 'avatar1',
-      'title': 'Avatar Premium',
-      'description': 'Desbloquea un avatar exclusivo para tu perfil.',
-      'icon': Icons.person,
-      'color': Colors.purple,
-      'cost': 100,
-      'isUnlocked': true,
-    },
-    {
-      'id': 'theme1',
-      'title': 'Tema Naturaleza',
-      'description': 'Cambia el tema de la app a un hermoso diseño inspirado en la naturaleza.',
-      'icon': Icons.palette,
-      'color': Colors.green,
-      'cost': 150,
-      'isUnlocked': true,
-    },
-    {
-      'id': 'game1',
-      'title': 'Minijuego: Puzzle',
-      'description': 'Desbloquea un juego de puzzle para distraerte durante los antojos.',
-      'icon': Icons.extension,
-      'color': Colors.blue,
-      'cost': 200,
-      'isUnlocked': false,
-    },
-    {
-      'id': 'badge1',
-      'title': 'Insignia de Oro',
-      'description': 'Una insignia especial para mostrar en tu perfil.',
-      'icon': Icons.military_tech,
-      'color': Colors.amber,
-      'cost': 250,
-      'isUnlocked': false,
-    },
-    {
-      'id': 'meditation1',
-      'title': 'Pack de Meditación',
-      'description': 'Desbloquea 5 meditaciones guiadas exclusivas.',
-      'icon': Icons.self_improvement,
-      'color': Colors.indigo,
-      'cost': 300,
-      'isUnlocked': false,
-    },
-  ];
-
-  // Listas para el diario emocional y red de apoyo
-  late List<EmotionalEntry> _emotionalEntries = [];
-  late List<SupportContact> _supportContacts = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<ProgressProvider>(context, listen: false);
-      provider.loadUserProgress();
-      provider.loadAchievements();
+      Provider.of<ProgressProvider>(context, listen: false).loadUserProgress();
+      Provider.of<ProgressProvider>(context, listen: false).loadAchievements();
+      Provider.of<GamificationProvider>(context, listen: false).refreshAll();
     });
   }
 
@@ -89,88 +35,60 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
     _tabController.dispose();
     super.dispose();
   }
-  
-  void _unlockReward(String rewardId) {
-    if (_motivationPoints >= _getRewardCost(rewardId)) {
-      setState(() {
-        _motivationPoints -= _getRewardCost(rewardId);
-        
-        // Actualizar estado de la recompensa
-        for (int i = 0; i < _rewards.length; i++) {
-          if (_rewards[i]['id'] == rewardId) {
-            _rewards[i]['isUnlocked'] = true;
-            break;
-          }
-        }
-      });
-      
-      // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('¡Recompensa desbloqueada con éxito!'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    } else {
-      // Mostrar mensaje de error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('No tienes suficientes puntos de motivación'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+
+  Color _colorFromHex(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) {
+      return Color(int.parse('FF$hex', radix: 16));
     }
-  }
-  
-  int _getRewardCost(String rewardId) {
-    for (var reward in _rewards) {
-      if (reward['id'] == rewardId) {
-        return reward['cost'];
-      }
-    }
-    return 0;
+    return AppColors.primary;
   }
 
-  Map<String, dynamic> _achievementViewModel(Achievement achievement) {
-    final visual = _achievementVisual(achievement.id);
-    return {
-      'id': achievement.id,
-      'title': achievement.title,
-      'description': achievement.description,
-      'icon': visual['icon'],
-      'color': visual['color'],
-      'isCompleted': achievement.isCompleted,
-      'date': achievement.date != null ? _formatDate(achievement.date!) : '',
-      'progress': achievement.progress.clamp(0.0, 1.0).toDouble(),
-      'points': visual['points'],
-    };
+  IconData _achievementIcon(String name) {
+    switch (name) {
+      case 'calendar_today': return Icons.calendar_today;
+      case 'calendar_view_day': return Icons.calendar_view_day;
+      case 'calendar_view_week': return Icons.calendar_view_week;
+      case 'calendar_month': return Icons.calendar_month;
+      case 'savings': return Icons.savings;
+      case 'account_balance': return Icons.account_balance;
+      case 'task_alt': return Icons.task_alt;
+      case 'assignment_turned_in': return Icons.assignment_turned_in;
+      case 'fact_check': return Icons.fact_check;
+      case 'trending_down': return Icons.trending_down;
+      default: return Icons.emoji_events;
+    }
   }
 
-  Map<String, dynamic> _achievementVisual(String id) {
-    switch (id) {
-      case 'firstDay':
-        return {'icon': Icons.calendar_today, 'color': Colors.blue, 'points': 50};
-      case 'firstWeek':
-        return {'icon': Icons.calendar_view_week, 'color': Colors.green, 'points': 100};
-      case 'firstMonth':
-        return {'icon': Icons.calendar_month, 'color': Colors.orange, 'points': 200};
-      case 'moneySaved':
-        return {'icon': Icons.savings, 'color': Colors.amber, 'points': 75};
+  IconData _rewardIcon(String code) {
+    switch (code) {
+      case 'avatar_premium': return Icons.person;
+      case 'tema_naturaleza': return Icons.palette;
+      case 'tema_oscuro': return Icons.dark_mode;
+      case 'insignia_oro': return Icons.military_tech;
+      case 'chatbot_motivador': return Icons.smart_toy;
+      case 'fondo_relajante': return Icons.wallpaper;
+      default: return Icons.card_giftcard;
+    }
+  }
+
+  Color _rewardColor(String code) {
+    switch (code) {
+      case 'avatar_premium':
+        return Colors.purple;
+      case 'tema_naturaleza':
+        return Colors.green;
+      case 'tema_oscuro':
+        return Colors.blueGrey;
+      case 'insignia_oro':
+        return Colors.amber;
+      case 'chatbot_motivador':
+        return Colors.teal;
+      case 'fondo_relajante':
+        return Colors.indigo;
       default:
-        return {'icon': Icons.emoji_events, 'color': AppColors.primary, 'points': 50};
+        return AppColors.primary;
     }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
   @override
@@ -206,53 +124,30 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Pestaña de Logros
           _buildAchievementsTab(),
-          
-          // Pestaña de Recompensas
           _buildRewardsTab(),
-          
-          // Pestaña de Diario Emocional
-          EmotionalDiaryWidget(
-            entries: _emotionalEntries,
-            onAddEntry: (entry) {
-              setState(() {
-                _emotionalEntries.insert(0, entry);
-              });
-            },
-          ),
-          
-          // Pestaña de Red de Apoyo
-          SupportNetworkWidget(
-            contacts: _supportContacts,
-            onAddContact: (contact) {
-              setState(() {
-                _supportContacts.add(contact);
-              });
-            },
-          ),
+          const EmotionalDiaryWidget(),
+          const SupportNetworkWidget(),
         ],
       ),
     );
   }
-  
+
   Widget _buildAchievementsTab() {
-    final progressProvider = Provider.of<ProgressProvider>(context);
-    final achievements = progressProvider.achievements.map(_achievementViewModel).toList();
-    // Separar logros completados y pendientes
-    final completedAchievements = achievements.where((a) => a['isCompleted'] == true).toList();
-    final pendingAchievements = achievements.where((a) => a['isCompleted'] != true).toList();
-    final motivationPoints = progressProvider.userProgress?.motivationPoints ?? completedAchievements.fold<int>(
-      0,
-      (total, achievement) => total + ((achievement['points'] ?? 0) as int),
-    );
-    
+    final gamificationProv = Provider.of<GamificationProvider>(context);
+    final achievements = gamificationProv.dynamicAchievements;
+    final motivationPoints = gamificationProv.motivationPoints;
+
+    final completed =
+        achievements.where((a) => a.unlocked).toList();
+    final pending =
+        achievements.where((a) => !a.unlocked).toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Puntos de motivación
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -317,7 +212,6 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
                     color: Colors.white,
                   ),
                   onPressed: () {
-                    // Mostrar información sobre los puntos
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -338,10 +232,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
               ],
             ),
           ),
-          
           const SizedBox(height: 24),
-          
-          // Logros completados
           const Text(
             "Logros completados",
             style: TextStyle(
@@ -351,18 +242,11 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
             ),
           ),
           const SizedBox(height: 16),
-          
-          if (completedAchievements.isEmpty)
-            _buildEmptyAchievementsMessage("Aún no hay logros completados")
+          if (completed.isEmpty)
+            _buildEmptyMessage("Aún no hay logros completados")
           else
-            ...completedAchievements.map((achievement) => _buildAchievementCard(
-              achievement: achievement,
-              isCompleted: true,
-            )).toList(),
-          
+            ...completed.map((a) => _buildAchievementCard(a, true)).toList(),
           const SizedBox(height: 24),
-          
-          // Logros pendientes
           const Text(
             "Próximos logros",
             style: TextStyle(
@@ -372,20 +256,16 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
             ),
           ),
           const SizedBox(height: 16),
-          
-          if (pendingAchievements.isEmpty)
-            _buildEmptyAchievementsMessage("No hay logros pendientes")
+          if (pending.isEmpty)
+            _buildEmptyMessage("No hay logros pendientes")
           else
-            ...pendingAchievements.map((achievement) => _buildAchievementCard(
-              achievement: achievement,
-              isCompleted: false,
-            )).toList(),
+            ...pending.map((a) => _buildAchievementCard(a, false)).toList(),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyAchievementsMessage(String message) {
+  Widget _buildEmptyMessage(String message) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -403,15 +283,144 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
       ),
     );
   }
-  
+
+  Widget _buildAchievementCard(DynamicAchievement achievement, bool isCompleted) {
+    final color = _colorFromHex(achievement.color);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _achievementIcon(achievement.icon),
+                  color: color,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      achievement.title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isCompleted
+                            ? AppColors.text
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isCompleted
+                          ? "Completado"
+                          : "En progreso",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isCompleted
+                            ? Colors.green
+                            : AppColors.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.stars,
+                      color: AppColors.primary,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      "${achievement.rewardPoints}",
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            achievement.description,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (!isCompleted) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: achievement.progress.clamp(0.0, 1.0),
+                minHeight: 8,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "${achievement.progressPercentage}% completado",
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildRewardsTab() {
-    final motivationPoints = Provider.of<ProgressProvider>(context).userProgress?.motivationPoints ?? _motivationPoints;
+    final gamificationProv = Provider.of<GamificationProvider>(context);
+    final rewards = gamificationProv.rewards;
+    final points = gamificationProv.motivationPoints;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Puntos de motivación
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -460,7 +469,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "$motivationPoints MP",
+                      "$points MP",
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -472,10 +481,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
               ],
             ),
           ),
-          
           const SizedBox(height: 24),
-          
-          // Recompensas disponibles
           const Text(
             "Recompensas disponibles",
             style: TextStyle(
@@ -485,17 +491,16 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
             ),
           ),
           const SizedBox(height: 16),
-          
-          ..._rewards.map((reward) => _buildRewardCard(reward)).toList(),
+          ...rewards.map((reward) => _buildRewardCard(reward, points)).toList(),
         ],
       ),
     );
   }
-  
-  Widget _buildAchievementCard({
-    required Map<String, dynamic> achievement,
-    required bool isCompleted,
-  }) {
+
+  Widget _buildRewardCard(RewardItem reward, int availablePoints) {
+    final color = _rewardColor(reward.code);
+    final bool canUnlock = availablePoints >= reward.cost && !reward.isUnlocked;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -509,137 +514,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
             offset: const Offset(0, 4),
           ),
         ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: achievement['color'].withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  achievement['icon'],
-                  color: achievement['color'],
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      achievement['title'],
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isCompleted
-                            ? AppColors.text
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isCompleted
-                          ? "Completado el ${achievement['date']}"
-                          : "En progreso",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isCompleted
-                            ? Colors.green
-                            : AppColors.textSecondary,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.stars,
-                      color: AppColors.primary,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      "${achievement['points']}",
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            achievement['description'],
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          if (!isCompleted && achievement['progress'] != null) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: achievement['progress'],
-                minHeight: 8,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(achievement['color']),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "${(achievement['progress'] * 100).toInt()}% completado",
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildRewardCard(Map<String, dynamic> reward) {
-    final availablePoints = Provider.of<ProgressProvider>(context, listen: false).userProgress?.motivationPoints ?? _motivationPoints;
-    final bool isUnlocked = reward['isUnlocked'] == true;
-    final bool canUnlock = availablePoints >= reward['cost'];
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: isUnlocked
+        border: reward.isUnlocked
             ? Border.all(color: Colors.green, width: 2)
             : null,
       ),
@@ -651,12 +526,12 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: reward['color'].withOpacity(0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  reward['icon'],
-                  color: reward['color'],
+                  _rewardIcon(reward.code),
+                  color: color,
                   size: 24,
                 ),
               ),
@@ -666,7 +541,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      reward['title'],
+                      reward.title,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -683,9 +558,9 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          "${reward['cost']} MP",
+                          "${reward.cost} MP",
                           style: TextStyle(
-                            color: canUnlock
+                            color: canUnlock || reward.isUnlocked
                                 ? AppColors.primary
                                 : AppColors.textSecondary,
                             fontWeight: FontWeight.bold,
@@ -697,7 +572,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
                   ],
                 ),
               ),
-              if (isUnlocked)
+              if (reward.isUnlocked)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -709,11 +584,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
                   ),
                   child: const Row(
                     children: [
-                      Icon(
-                        Icons.check,
-                        color: Colors.green,
-                        size: 14,
-                      ),
+                      Icon(Icons.check, color: Colors.green, size: 14),
                       SizedBox(width: 4),
                       Text(
                         "Desbloqueado",
@@ -729,7 +600,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
               else
                 ElevatedButton(
                   onPressed: canUnlock
-                      ? () => _unlockReward(reward['id'])
+                      ? () => _unlockReward(reward.code)
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: canUnlock
@@ -750,7 +621,7 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
           ),
           const SizedBox(height: 12),
           Text(
-            reward['description'],
+            reward.description,
             style: const TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
@@ -760,78 +631,41 @@ class _GamificationScreenState extends State<GamificationScreen> with SingleTick
       ),
     );
   }
-  
-  Widget _buildAvatarCategory({
-    required String title,
-    required List<Map<String, dynamic>> items,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.text,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 40,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final isSelected = item['isSelected'] == true;
-              
-              return GestureDetector(
-                onTap: () {
-                  // Actualizar selección
-                  HapticFeedback.lightImpact();
-                  setState(() {
-                    for (var i = 0; i < items.length; i++) {
-                      items[i]['isSelected'] = i == index;
-                    }
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.accent.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      item['name'],
-                      style: TextStyle(
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.textSecondary,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+
+  void _unlockReward(String code) {
+    final provider = Provider.of<GamificationProvider>(context, listen: false);
+    final reward = provider.rewards.firstWhere(
+      (r) => r.code == code,
+      orElse: () => RewardItem(code: '', title: '', description: '', cost: 0, isUnlocked: false),
     );
+
+    if (provider.motivationPoints < reward.cost) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No tienes suficientes puntos de motivación'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+
+    provider.unlockReward(code).then((ok) {
+      if (ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('¡Recompensa desbloqueada con éxito!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    });
   }
 }
