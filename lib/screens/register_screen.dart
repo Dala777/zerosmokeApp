@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/notification_provider.dart';
 import '../theme/app_colors.dart';
 import 'login_screen.dart';
 import 'dashboard_screen.dart';
@@ -109,6 +110,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     if (mounted) Navigator.of(context).pop();
     
     if (result['success'] == true) {
+      // Registrar dispositivo FCM si hay token pendiente
+      if (mounted) {
+        Provider.of<NotificationProvider>(context, listen: false).retryRegisterDevice();
+      }
       // Navegar al dashboard
       if (mounted) {
         Navigator.of(context).pushReplacement(

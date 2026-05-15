@@ -12,15 +12,13 @@ import 'services/gamification_service.dart';
 import 'services/notification_service.dart';
 
 void main() {
-  // Asegurarse de que las dependencias de Flutter estén inicializadas
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Crear instancias de servicios
+
   final apiService = ApiService();
   final progressService = ProgressService(apiService);
   final gamificationService = GamificationService();
   final notificationService = NotificationService();
-  
+
   runApp(
     MultiProvider(
       providers: [
@@ -29,9 +27,30 @@ void main() {
         ChangeNotifierProvider(create: (_) => GamificationProvider(gamificationService)),
         ChangeNotifierProvider(create: (_) => NotificationProvider(notificationService)),
       ],
-      child: const ZeroSmokeApp(),
+      child: const _FcmGate(child: ZeroSmokeApp()),
     ),
   );
+}
+
+class _FcmGate extends StatefulWidget {
+  final Widget child;
+  const _FcmGate({required this.child});
+
+  @override
+  State<_FcmGate> createState() => _FcmGateState();
+}
+
+class _FcmGateState extends State<_FcmGate> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationProvider>().initializeFcm();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class ZeroSmokeApp extends StatelessWidget {
@@ -41,7 +60,7 @@ class ZeroSmokeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ZeroSmoke',
-      debugShowCheckedModeBanner: false, // Quitar banner de debug
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: AppColors.primary,
         scaffoldBackgroundColor: AppColors.background,

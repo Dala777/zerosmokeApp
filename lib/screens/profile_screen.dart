@@ -6,8 +6,10 @@ import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/progress_provider.dart';
+import '../providers/notification_provider.dart';
 import 'login_screen.dart';
 import 'notification_preferences_screen.dart';
+import 'notifications_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -72,6 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ProgressProvider>(context, listen: false).loadUserProgress();
       Provider.of<ProgressProvider>(context, listen: false).loadAchievements();
+      Provider.of<NotificationProvider>(context, listen: false).loadNotificationHistory(refresh: true);
     });
   }
 
@@ -719,6 +722,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           ),
           child: Column(
             children: [
+              _buildNotificationCenterItem(),
+              _buildDivider(),
               _buildNavSettingItem(
                 icon: Icons.notifications_outlined,
                 title: "Notificaciones",
@@ -764,6 +769,80 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
   
+  Widget _buildNotificationCenterItem() {
+    final notifProvider = Provider.of<NotificationProvider>(context);
+    final unread = notifProvider.unreadCount;
+
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary.withOpacity(0.2),
+                    AppColors.secondary.withOpacity(0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.notifications_active_outlined, color: AppColors.accent, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Centro de notificaciones",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    unread > 0 ? "$unread notificación(es) sin leer" : "Sin notificaciones nuevas",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (unread > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  unread.toString(),
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildNavSettingItem({
     required IconData icon,
     required String title,

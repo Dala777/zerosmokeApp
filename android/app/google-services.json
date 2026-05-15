@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "341114167464",
+    "project_id": "zerosmoke-2077c",
+    "storage_bucket": "zerosmoke-2077c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:341114167464:android:9d219d3c50f16a7583629d",
+        "android_client_info": {
+          "package_name": "com.example.zerosmoke"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzE_a1uaPyidlXLtYvuj7rLePupxlRmV8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

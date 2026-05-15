@@ -20,6 +20,8 @@ class ProgressProvider extends ChangeNotifier {
 
   ProgressProvider(this._progressService);
 
+  bool _batchUpdating = false;
+
   // Getters
   UserProgress? get userProgress => _userProgress;
   DailyPlan? get dailyPlan => _dailyPlan;
@@ -40,17 +42,17 @@ class ProgressProvider extends ChangeNotifier {
     _isLoading = false;
     _errorMessage = '';
     _needsInitialTest = false;
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
   }
 
-  // Inicializar el provider
+  // Inicializar el provider (versión batch, 1 solo notifyListeners)
   Future<void> initialize() async {
+    _batchUpdating = true;
     _isLoading = true;
     notifyListeners();
 
     try {
       await getUserProgress();
-      // si ya existe progreso, también cargamos el plan diario inmediatamente
       if (!_needsInitialTest) {
         await getDailyPlan();
       }
@@ -61,6 +63,7 @@ class ProgressProvider extends ChangeNotifier {
       _errorMessage = e.toString();
     } finally {
       _isLoading = false;
+      _batchUpdating = false;
       notifyListeners();
     }
   }
@@ -93,7 +96,7 @@ class ProgressProvider extends ChangeNotifier {
   Future<void> getUserProgress() async {
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
 
     try {
       final response = await _progressService.getUserProgress();
@@ -117,7 +120,7 @@ class ProgressProvider extends ChangeNotifier {
       _errorMessage = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 
@@ -125,7 +128,7 @@ class ProgressProvider extends ChangeNotifier {
   Future<void> getWeeklyProgress() async {
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
 
     try {
       final response = await _progressService.getWeeklyProgress();
@@ -150,7 +153,7 @@ class ProgressProvider extends ChangeNotifier {
       _errorMessage = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 
@@ -158,7 +161,7 @@ class ProgressProvider extends ChangeNotifier {
   Future<void> getAchievements() async {
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
 
     try {
       final response = await _progressService.getAchievements();
@@ -188,7 +191,7 @@ class ProgressProvider extends ChangeNotifier {
       _errorMessage = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 
@@ -203,17 +206,17 @@ class ProgressProvider extends ChangeNotifier {
         _todayCheckIn = null;
       }
       print('[ProgressProvider] hasCompletedTodayCheckIn=$hasCompletedTodayCheckIn id=${_todayCheckIn?.id}');
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 
   Future<bool> saveDailyCheckIn(DailyCheckIn checkIn) async {
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
 
     try {
       final response = await _progressService.saveDailyCheckIn(checkIn);
@@ -239,7 +242,7 @@ class ProgressProvider extends ChangeNotifier {
       return false;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 
@@ -247,7 +250,7 @@ class ProgressProvider extends ChangeNotifier {
   Future<bool> saveInitialTest(InitialTest test) async {
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
 
     try {
       final response = await _progressService.saveInitialTest(test);
@@ -265,7 +268,7 @@ class ProgressProvider extends ChangeNotifier {
       return false;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 
@@ -273,7 +276,7 @@ class ProgressProvider extends ChangeNotifier {
   Future<void> getDailyPlan({DateTime? date}) async {
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
 
     try {
       final response = await _progressService.getDailyPlan(date: date);
@@ -287,7 +290,7 @@ class ProgressProvider extends ChangeNotifier {
       _errorMessage = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 
@@ -295,7 +298,7 @@ class ProgressProvider extends ChangeNotifier {
   Future<bool> completeActivity(String planId, String activityId) async {
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
 
     try {
       final response = await _progressService.completeActivity(planId, activityId);
@@ -317,7 +320,7 @@ class ProgressProvider extends ChangeNotifier {
       return false;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 
@@ -325,7 +328,7 @@ class ProgressProvider extends ChangeNotifier {
   Future<bool> saveSmokingRecord(SmokingRecord record) async {
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
 
     try {
       final response = await _progressService.saveSmokingRecord(record);
@@ -346,7 +349,7 @@ class ProgressProvider extends ChangeNotifier {
       return false;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 
@@ -354,7 +357,7 @@ class ProgressProvider extends ChangeNotifier {
   Future<bool> updateUserProgress(Map<String, dynamic> data) async {
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners();
+    if (!_batchUpdating) notifyListeners();
 
     try {
       final response = await _progressService.updateUserProgress(data);
@@ -371,7 +374,7 @@ class ProgressProvider extends ChangeNotifier {
       return false;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_batchUpdating) notifyListeners();
     }
   }
 

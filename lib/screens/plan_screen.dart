@@ -19,7 +19,9 @@ class _PlanScreenState extends State<PlanScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDailyPlan();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDailyPlan();
+    });
   }
   
   Future<void> _loadDailyPlan() async {
