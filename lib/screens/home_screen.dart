@@ -8,6 +8,10 @@ import '../widgets/consumption_widgets.dart';
 import '../models/smoking_record.dart';
 import '../providers/progress_provider.dart';
 import '../widgets/emergency_button_widget.dart';
+import '../widgets/zero_app_bar.dart';
+import '../services/api_service.dart';
+import 'notifications_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,14 +23,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
-  
-  final List<String> _quotes = [
-    "Cada cigarro que no fumas es un paso hacia una vida más larga y saludable.",
-    "No se trata de cuántas veces caes, sino de cuántas te levantas.",
-    "Tu futuro empieza hoy. Decide ser libre del tabaco.",
-    "Los pulmones limpios saben mejor que cualquier cigarro.",
-    "Cada día sin fumar es una victoria para tu salud.",
-  ];
+  String _advice = '';
+  bool _adviceLoading = false;
 
   @override
   void initState() {
@@ -39,12 +37,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       parent: _controller,
       curve: Curves.easeInOut,
     );
-    
-    // Cargar progreso del usuario
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final progressProvider = Provider.of<ProgressProvider>(context, listen: false);
       progressProvider.loadUserProgress();
       progressProvider.loadDailyPlan();
+      progressProvider.loadTodayRisk();
+      _loadAdvice();
     });
   }
 
@@ -54,120 +53,138 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  String getRandomQuote() {
-    _quotes.shuffle();
-    return _quotes.first;
+  Future<void> _loadAdvice() async {
+    if (_advice.isNotEmpty) return;
+    setState(() => _adviceLoading = true);
+    final result = await ApiService.sendChatMessage(
+      "Dame un consejo motivador breve y personalizado para alguien que esta dejando de fumar. Maximo 2 oraciones.",
+    );
+    if (!mounted) return;
+    setState(() {
+      _advice = result['success'] == true
+          ? (result['reply'] ?? result['response'] ?? '').toString()
+          : 'Cada dia sin fumar es una victoria. Respira profundo, toma agua y continua con tu plan.';
+      _adviceLoading = false;
+    });
   }
 
   void _logCigarette(SmokingRecord record) {
     HapticFeedback.mediumImpact();
     _controller.reset();
     _controller.forward();
-    
-    // Guardar el registro en la base de datos
-    final progressProvider = Provider.of<ProgressProvider>(context, listen: false);
-    progressProvider.saveSmokingRecord(record);
+    Provider.of<ProgressProvider>(context, listen: false).saveSmokingRecord(record);
   }
 
-  void _showAdviceDialog() {
+  Future<void> _showGroqAdvice() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: AppColors.primary),
+              SizedBox(height: 16),
+              Text("Generando consejo personalizado...",
+                style: TextStyle(color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final result = await ApiService.sendChatMessage(
+      "Dame un consejo motivador y personalizado basado en mi situacion actual para seguir adelante con mi proceso de dejar de fumar. Se breve, empatico y directo.",
+    );
+
+    if (!mounted) return;
+    Navigator.of(context).pop();
+
+    final reply = result['success'] == true
+        ? (result['reply'] ?? result['response'] ?? '').toString()
+        : 'Sigue adelante, cada dia sin fumar es una victoria. Respira profundo, toma agua y continua con tu plan.';
+
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // Get safe area to ensure dialog fits properly
-        final safeAreaPadding = MediaQuery.of(context).padding;
-        final safeHeight = MediaQuery.of(context).size.height - 
-                          safeAreaPadding.top - 
-                          safeAreaPadding.bottom;
-        
         return Dialog(
           backgroundColor: AppColors.cardBackground,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          // Add constraints to prevent overflow
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: safeHeight * 0.7, // 70% of safe height
-            ),
-            child: SingleChildScrollView( // Make scrollable if needed
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min, // Take minimum space
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.lightbulb, color: AppColors.primary),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.2),
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          "Consejo del día", 
-                          style: TextStyle(
+                        child: const Icon(Icons.lightbulb, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          "Consejo personalizado",
+                          style: const TextStyle(
                             color: AppColors.text,
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
                           ),
                         ),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: AppColors.textSecondary),
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.tertiary.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: AppColors.primary.withOpacity(0.3),
-                        ),
                       ),
-                      child: Text(
-                        getRandomQuote(), 
-                        style: const TextStyle(
-                          color: AppColors.text,
-                          fontSize: 16,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.zero,
                         onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          "¡Entendido!",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.tertiary.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.3),
                       ),
                     ),
-                  ],
-                ),
+                    child: Text(
+                      reply,
+                      style: const TextStyle(
+                        color: AppColors.text,
+                        fontSize: 16,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("¡Gracias!"),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -179,158 +196,138 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.health_and_safety, color: AppColors.primary),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Mi Progreso',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: AppColors.text,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
+      appBar: ZeroAppBar(
+        title: 'Inicio',
+        subtitle: 'Tu viaje hacia una vida sin humo',
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: AppColors.accent),
-              onPressed: () {},
-            ),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: AppColors.accent),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
           ),
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.settings_outlined, color: AppColors.accent),
-              onPressed: () {},
-            ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: AppColors.accent),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
           ),
         ],
       ),
       backgroundColor: AppColors.background,
       body: SafeArea(
-        // Add bottom padding to prevent overflow
         bottom: true,
         child: Consumer<ProgressProvider>(
           builder: (context, progressProvider, child) {
-            // Si está cargando, mostrar indicador
-            if (progressProvider.isLoading) {
+            if (progressProvider.isLoading && progressProvider.userProgress == null) {
               return const Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
               );
             }
-            
-            // Si hay un error, mostrar mensaje
-            if (progressProvider.errorMessage.isNotEmpty) {
-              return Center(
-                child: Text(
-                  "Error: ${progressProvider.errorMessage}",
-                  style: const TextStyle(color: Colors.red),
-                ),
-              );
-            }
-            
-            // Si el usuario necesita tomar el test inicial, mostrar mensaje
+
             if (progressProvider.needsInitialTest) {
               return const Center(
                 child: Text("Por favor, completa el test inicial"),
               );
             }
-            
-            // Obtener datos del progreso
+
             final userProgress = progressProvider.userProgress;
             int daysWithoutSmoking = userProgress?.daysWithoutSmoking ?? 0;
             double moneySaved = userProgress?.moneySaved ?? 0.0;
             double planProgress = userProgress?.planProgress ?? userProgress?.healthProgress ?? 0.0;
-            
+            int cigarettesAvoided = userProgress?.cigarettesAvoided ?? 0;
+            final riskLevel = progressProvider.riskLevel;
+            final riskScore = progressProvider.riskScore;
+
             return Padding(
-              padding: const EdgeInsets.only(bottom: 16.0), // Add bottom padding
-              child: ListView( // Use ListView instead of SingleChildScrollView
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
                 children: [
-                  // Mensaje de motivación
+                  // Indicador de riesgo
+                  if (riskLevel.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _riskColor(riskLevel).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _riskColor(riskLevel).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(_riskIcon(riskLevel), color: _riskColor(riskLevel), size: 22),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Riesgo actual: ${riskLevel.toUpperCase()}",
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: _riskColor(riskLevel), fontSize: 14),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _riskMessage(riskLevel, riskScore),
+                                  style: TextStyle(color: _riskColor(riskLevel).withOpacity(0.8), fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _riskColor(riskLevel).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text("$riskScore%", style: TextStyle(fontWeight: FontWeight.bold, color: _riskColor(riskLevel), fontSize: 14)),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Consejo AI personalizado (reemplaza la card de motivación estática)
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withOpacity(0.2),
-                          AppColors.tertiary.withOpacity(0.3),
-                        ],
+                        colors: [AppColors.primary.withOpacity(0.2), AppColors.tertiary.withOpacity(0.3)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.6),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.emoji_emotions,
-                            color: AppColors.primary,
-                            size: 28,
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), shape: BoxShape.circle),
+                          child: Icon(
+                            _adviceLoading ? Icons.hourglass_empty : Icons.auto_awesome,
+                            color: AppColors.primary, size: 28,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: Text(
-                            "¡Hola! Recuerda que cada día sin fumar es una victoria. ¡Sigue así!",
-                            style: TextStyle(
-                              color: AppColors.text,
-                              fontSize: 16,
-                              height: 1.4,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          child: _adviceLoading
+                              ? const Text(
+                                  "Generando consejo personalizado...",
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 14, fontStyle: FontStyle.italic),
+                                )
+                              : Text(
+                                  _advice,
+                                  style: const TextStyle(color: AppColors.text, fontSize: 15, height: 1.4, fontWeight: FontWeight.w500),
+                                ),
                         ),
                       ],
                     ),
                   ),
-                  
-                  // Widget de progreso
+
+                  // Progreso: días, dinero, plan
                   Card(
-                    elevation: 4,
-                    shadowColor: AppColors.accent.withOpacity(0.2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: ProgressWidget(
@@ -342,41 +339,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
-                  // Título de sección
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8.0, bottom: 12.0),
-                    child: Text(
-                      "Acciones",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.text,
-                      ),
-                    ),
-                  ),
-                  
-                  // Widget de consumo
+
+                  // Consumo: registrar cigarro / pedir consejo
                   Card(
-                    elevation: 4,
-                    shadowColor: AppColors.accent.withOpacity(0.2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: ConsumptionWidget(
                         onCigaretteLogged: (record) => _logCigarette(record),
-                        onRequestAdvice: _showAdviceDialog,
+                        onRequestAdvice: _showGroqAdvice,
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
-                  // Contador de cigarrillos
+
+                  // Contador: fumados hoy + evitados
                   AnimatedBuilder(
                     animation: _animation,
                     builder: (context, child) {
@@ -386,74 +366,62 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 24.0),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [
-                                AppColors.tertiary,
-                                AppColors.primary.withOpacity(0.7),
-                              ],
+                              colors: [AppColors.tertiary, AppColors.primary.withOpacity(0.7)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          child: Column(
                             children: [
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.3),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      FontAwesomeIcons.smoking,
-                                      color: AppColors.accent,
-                                      size: 18,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), shape: BoxShape.circle),
+                                        child: const Icon(FontAwesomeIcons.smoking, color: AppColors.accent, size: 18),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Text("Hoy fumados:", style: TextStyle(color: AppColors.text, fontSize: 16, fontWeight: FontWeight.w500)),
+                                    ],
                                   ),
-                                  const SizedBox(width: 16),
-                                  const Text(
-                                    "Cigarrillos de hoy:",
-                                    style: TextStyle(
-                                      color: AppColors.text,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(16)),
+                                    child: Text(
+                                      "${userProgress?.cigarettesSmokedToday ?? 0}",
+                                      style: const TextStyle(color: AppColors.accent, fontSize: 24, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ],
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.accent.withOpacity(0.1),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  "${userProgress?.cigarettesSmokedToday ?? 0}",
-                                  style: const TextStyle(
-                                    color: AppColors.accent,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), shape: BoxShape.circle),
+                                        child: const Icon(Icons.block, color: AppColors.accent, size: 18),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Text("Evitados:", style: TextStyle(color: AppColors.text, fontSize: 16, fontWeight: FontWeight.w500)),
+                                    ],
                                   ),
-                                ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(16)),
+                                    child: Text(
+                                      "$cigarettesAvoided",
+                                      style: const TextStyle(color: AppColors.accent, fontSize: 24, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -461,80 +429,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       );
                     },
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Botón de emergencia
                   const EmergencyButtonWidget(),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Botón de consejo
-                  GestureDetector(
-                    onTap: _showAdviceDialog,
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: AppColors.secondary.withOpacity(0.5),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.lightbulb_outline,
-                              color: AppColors.secondary,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "¿Necesitas motivación?",
-                                  style: TextStyle(
-                                    color: AppColors.text,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  "Toca para un consejo motivador",
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios,
-                            color: AppColors.secondary,
-                            size: 16,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             );
@@ -542,5 +441,45 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
     );
+  }
+
+  // Helpers de riesgo
+  Color _riskColor(String level) {
+    switch (level.toLowerCase()) {
+      case 'bajo':
+        return AppColors.riskLow;
+      case 'moderado':
+        return AppColors.riskModerate;
+      case 'alto':
+        return AppColors.riskHigh;
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
+  IconData _riskIcon(String level) {
+    switch (level.toLowerCase()) {
+      case 'bajo':
+        return Icons.check_circle_outline;
+      case 'moderado':
+        return Icons.warning_amber_rounded;
+      case 'alto':
+        return Icons.error_outline;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  String _riskMessage(String level, int score) {
+    switch (level.toLowerCase()) {
+      case 'bajo':
+        return 'Estás en control. Sigue aplicando tus estrategias.';
+      case 'moderado':
+        return 'Ten cuidado. Usa tus herramientas de afrontamiento.';
+      case 'alto':
+        return 'Alto riesgo de recaída. Busca apoyo ahora.';
+      default:
+        return 'Monitoreando tu riesgo personalizado.';
+    }
   }
 }

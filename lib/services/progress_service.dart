@@ -262,6 +262,29 @@ class ProgressService {
     }
   }
 
+  // Obtener riesgo del día
+  Future<Map<String, dynamic>> getTodayRisk() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/risk/today'),
+        headers: headers,
+      );
+      final responseData = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 200,
+        'message': responseData['message'] ?? '',
+        'data': responseData['data'],
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+        'data': null,
+      };
+    }
+  }
+
   // Completar actividad
   Future<Map<String, dynamic>> completeActivity(String planId, String activityId) async {
     try {

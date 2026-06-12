@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'theme/app_colors.dart';
+import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/progress_provider.dart';
@@ -61,17 +61,7 @@ class ZeroSmokeApp extends StatelessWidget {
     return MaterialApp(
       title: 'ZeroSmoke',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.background,
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: AppColors.text),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.primary,
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-        ),
-      ),
+      theme: AppTheme.light,
       home: const SplashScreen(),
     );
   }

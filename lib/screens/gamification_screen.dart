@@ -7,6 +7,7 @@ import '../providers/gamification_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/emotional_diary_widget.dart';
 import '../widgets/support_network_widget.dart';
+import '../widgets/zero_app_bar.dart';
 
 class GamificationScreen extends StatefulWidget {
   const GamificationScreen({Key? key}) : super(key: key);
@@ -95,23 +96,16 @@ class _GamificationScreenState extends State<GamificationScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          "Gamificación",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      appBar: ZeroAppBar(
+        title: "Logros y Recompensas",
+        subtitle: "Gamificación y motivación",
+        leading: const SizedBox.shrink(),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
+          indicatorColor: AppColors.primary,
           indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withOpacity(0.7),
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textSecondary,
           isScrollable: true,
           tabs: const [
             Tab(text: "Logros"),

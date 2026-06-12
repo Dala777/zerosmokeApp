@@ -179,6 +179,41 @@ class ApiService {
     }
   }
 
+  // Actualizar perfil de usuario
+  static Future<Map<String, dynamic>> updateUserProfile(Map<String, dynamic> data) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/auth/profile'),
+        headers: await _getHeaders(),
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user', jsonEncode(responseData['user'] ?? responseData['data'] ?? responseData));
+        return {
+          'success': true,
+          'message': 'Perfil actualizado',
+          'data': responseData['user'] ?? responseData['data'] ?? responseData,
+        };
+      } else {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body)
+            : {'message': 'Error desconocido'};
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Error al actualizar perfil',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+  }
+
   // Cerrar sesión
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();

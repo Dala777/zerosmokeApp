@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/zero_app_bar.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -78,72 +79,26 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              itemCount: _messages.length + (_isSending ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == _messages.length) return _buildTyping();
-                return _buildBubble(_messages[index]);
-              },
-            ),
+    return Column(
+      children: [
+        ZeroAppBar(
+          title: 'Asistente ZeroSmoke',
+          subtitle: 'Apoyo contextual con IA',
+        ),
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            itemCount: _messages.length + (_isSending ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == _messages.length) return _buildTyping();
+              return _buildBubble(_messages[index]);
+            },
           ),
-          _buildSuggestions(),
-          _buildComposer(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.psychology_alt, color: AppColors.primary),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Asistente ZeroSmoke',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Apoyo contextual para tu proceso diario',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+        _buildSuggestions(),
+        _buildComposer(),
+      ],
     );
   }
 

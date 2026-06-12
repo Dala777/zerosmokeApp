@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../providers/progress_provider.dart';
 import '../models/daily_plan.dart';
+import '../widgets/zero_app_bar.dart';
 
 class PlanScreen extends StatefulWidget {
   const PlanScreen({Key? key}) : super(key: key);
@@ -15,13 +16,32 @@ class PlanScreen extends StatefulWidget {
 class _PlanScreenState extends State<PlanScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
+  final ScrollController _calendarScrollController = ScrollController();
   
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDailyPlan();
+      _scrollToSelected();
     });
+  }
+  
+  @override
+  void dispose() {
+    _calendarScrollController.dispose();
+    super.dispose();
+  }
+  
+  void _scrollToSelected() {
+    if (!_calendarScrollController.hasClients) return;
+    final index = 7;
+    final offset = (index * 64.0) - (MediaQuery.of(context).size.width / 2) + 30;
+    _calendarScrollController.animateTo(
+      offset.clamp(0.0, _calendarScrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
   
   Future<void> _loadDailyPlan() async {
@@ -48,6 +68,7 @@ class _PlanScreenState extends State<PlanScreen> {
       _selectedDate = date;
     });
     _loadDailyPlan();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelected());
   }
   
   Future<void> _completeActivity(String planId, String activityId) async {
@@ -91,18 +112,13 @@ class _PlanScreenState extends State<PlanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          "Mi Plan ZeroSmoke",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.primary,
-        elevation: 0,
+      appBar: ZeroAppBar(
+        title: "Mi Plan",
+        subtitle: "Actividades personalizadas para hoy",
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline),
+            icon: const Icon(Icons.info_outline, color: AppColors.accent),
             onPressed: () {
-              // Mostrar información sobre el plan
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -180,10 +196,11 @@ class _PlanScreenState extends State<PlanScreen> {
                     SizedBox(
                       height: 80,
                       child: ListView.builder(
+                        controller: _calendarScrollController,
                         scrollDirection: Axis.horizontal,
-                        itemCount: 14, // Mostrar 2 semanas
+                        itemCount: 14,
                         itemBuilder: (context, index) {
-                          final date = DateTime.now().subtract(Duration(days: 7 - index));
+                          final date = _selectedDate.subtract(Duration(days: 7 - index));
                           final isSelected = date.year == _selectedDate.year &&
                                             date.month == _selectedDate.month &&
                                             date.day == _selectedDate.day;
@@ -200,12 +217,14 @@ class _PlanScreenState extends State<PlanScreen> {
                                 color: isSelected
                                     ? Colors.white
                                     : isToday
-                                        ? AppColors.accent.withOpacity(0.3)
+                                        ? Colors.white.withOpacity(0.2)
                                         : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                                 border: isToday && !isSelected
-                                    ? Border.all(color: Colors.white)
-                                    : null,
+                                    ? Border.all(color: Colors.white.withOpacity(0.6))
+                                    : isToday && isSelected
+                                        ? Border.all(color: Colors.white, width: 2)
+                                        : null,
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,

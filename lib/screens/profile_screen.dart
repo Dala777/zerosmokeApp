@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/progress_provider.dart';
 import '../providers/notification_provider.dart';
+import '../widgets/zero_app_bar.dart';
 import 'login_screen.dart';
 import 'notification_preferences_screen.dart';
 import 'notifications_screen.dart';
@@ -88,146 +89,43 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // AppBar mejorada con gradiente natural
-          SliverAppBar(
-            expandedHeight: 220.0,
-            floating: false,
-            pinned: true,
-            backgroundColor: AppColors.background,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                "Mi Perfil",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20,
-                  shadows: [
-                    Shadow(
-                      offset: const Offset(0, 1),
-                      blurRadius: 3,
-                      color: Colors.black.withOpacity(0.3),
-                    ),
-                  ],
-                ),
-              ),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: AppColors.gradientPrimary,
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Patrón decorativo sutil
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.white.withOpacity(0.1),
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.1),
-                            ],
-                            stops: const [0.0, 0.5, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Círculos decorativos
-                    Positioned(
-                      top: -50,
-                      right: -50,
-                      child: Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.1),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: -80,
-                      left: -60,
-                      child: Container(
-                        width: 150,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.accent.withOpacity(0.2),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                  },
-                ),
-              ),
-              Container(
-                margin: const EdgeInsets.only(right: 16, left: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.settings_outlined, color: Colors.white),
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                  },
-                ),
-              ),
-            ],
-          ),
-          
-          // Contenido principal con animaciones
-          SliverToBoxAdapter(
-            child: AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildProfileInfo(),
-                          const SizedBox(height: 32),
-                          _buildStatisticsSection(),
-                          const SizedBox(height: 32),
-                          _buildSettingsSection(),
-                          const SizedBox(height: 32),
-                          _buildAdditionalOptions(),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+      appBar: ZeroAppBar(
+        title: "Mi Perfil",
+        subtitle: "Tus datos y configuración",
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AppColors.accent),
+            onPressed: _showEditProfileDialog,
           ),
         ],
+      ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.all(20.0),
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildProfileInfo(),
+                    const SizedBox(height: 32),
+                    _buildStatisticsSection(),
+                    const SizedBox(height: 32),
+                    _buildSettingsSection(),
+                    const SizedBox(height: 32),
+                    _buildAdditionalOptions(),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -1122,6 +1020,111 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
   
+  Future<void> _showEditProfileDialog() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final user = auth.user;
+    final nameController = TextEditingController(text: user?.name ?? _userData['name']);
+    final emailController = TextEditingController(text: user?.email ?? _userData['email']);
+    final formKey = GlobalKey<FormState>();
+    bool saving = false;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.cardBackground,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text(
+                "Editar perfil",
+                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text),
+              ),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: "Nombre",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      style: const TextStyle(color: AppColors.text),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? "Ingresa tu nombre" : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: emailController,
+                      decoration: InputDecoration(
+                        labelText: "Correo electrónico",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      style: const TextStyle(color: AppColors.text),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return "Ingresa tu correo";
+                        if (!v.contains('@')) return "Correo inválido";
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: saving ? null : () => Navigator.pop(ctx),
+                  child: const Text("Cancelar"),
+                ),
+                ElevatedButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
+                          setDialogState(() => saving = true);
+                          final ok = await auth.updateProfile(
+                            nameController.text.trim(),
+                            emailController.text.trim(),
+                          );
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(ok ? "Perfil actualizado" : "Error: ${auth.errorMessage}"),
+                              backgroundColor: ok ? Colors.green : Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(saving ? "Guardando..." : "Guardar"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    nameController.dispose();
+    emailController.dispose();
+  }
+
   void _showLogoutConfirmation() {
     showDialog(
       context: context,

@@ -18,6 +18,10 @@ class ProgressProvider extends ChangeNotifier {
   String _errorMessage = '';
   bool _needsInitialTest = false;
 
+  String _riskLevel = '';
+  int _riskScore = 0;
+  List<String> _riskFactors = [];
+
   ProgressProvider(this._progressService);
 
   bool _batchUpdating = false;
@@ -32,6 +36,9 @@ class ProgressProvider extends ChangeNotifier {
   String get errorMessage => _errorMessage;
   bool get needsInitialTest => _needsInitialTest;
   bool get hasCompletedTodayCheckIn => _todayCheckIn != null && _todayCheckIn!.isToday();
+  String get riskLevel => _riskLevel;
+  int get riskScore => _riskScore;
+  List<String> get riskFactors => _riskFactors;
 
   void clear() {
     _userProgress = null;
@@ -42,6 +49,9 @@ class ProgressProvider extends ChangeNotifier {
     _isLoading = false;
     _errorMessage = '';
     _needsInitialTest = false;
+    _riskLevel = '';
+    _riskScore = 0;
+    _riskFactors = [];
     if (!_batchUpdating) notifyListeners();
   }
 
@@ -59,6 +69,7 @@ class ProgressProvider extends ChangeNotifier {
       await getWeeklyProgress();
       await getAchievements();
       await getTodayDailyCheckIn();
+      await loadTodayRisk();
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -211,6 +222,26 @@ class ProgressProvider extends ChangeNotifier {
       _errorMessage = e.toString();
       if (!_batchUpdating) notifyListeners();
     }
+  }
+
+  Future<void> loadTodayRisk() async {
+    try {
+      final response = await _progressService.getTodayRisk();
+      if (response['success'] && response['data'] != null) {
+        final data = Map<String, dynamic>.from(response['data']);
+        _riskLevel = (data['riskLevel'] ?? '').toString();
+        _riskScore = ((data['riskScore'] as num?)?.toInt() ?? 0);
+        final rawFactors = data['factors'];
+        _riskFactors = rawFactors is List
+            ? rawFactors.map((f) => f.toString()).toList()
+            : [];
+      }
+    } catch (e) {
+      _riskLevel = '';
+      _riskScore = 0;
+      _riskFactors = [];
+    }
+    if (!_batchUpdating) notifyListeners();
   }
 
   Future<bool> saveDailyCheckIn(DailyCheckIn checkIn) async {
